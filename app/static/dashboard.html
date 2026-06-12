@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PERSONAL SYSTEMS — DASHBOARD v2</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #050510;
+  color: #9999AA;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  min-height: 100vh;
+}
+
+/* ── LCARS HEADER ── */
+#lcars-header { background: #FF8800; display: flex; align-items: stretch; height: 52px; }
+#lcars-pill {
+  background: #FF8800; width: 120px; display: flex; align-items: center;
+  padding-left: 16px; font-size: 14px; font-weight: bold; color: #1a0800;
+  letter-spacing: 2px; flex-shrink: 0;
+}
+#lcars-divider { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 6px 0; gap: 3px; }
+#lcars-bar1 { background: #FF4400; height: 18px; border-radius: 0 9px 9px 0; margin-right: 140px; }
+#lcars-bar2 { background: #882200; height: 18px; border-radius: 0 9px 9px 0; margin-right: 60px; }
+#lcars-right {
+  background: #FF8800; width: 280px; display: flex; align-items: center;
+  justify-content: flex-end; padding-right: 20px; font-size: 11px;
+  color: #1a0800; font-weight: bold; letter-spacing: 1px; flex-shrink: 0;
+}
+
+/* ── TAB BAR ── */
+#tab-bar { display: flex; background: #07070f; border-bottom: 1px solid #1a1a2e; padding: 0 12px; }
+.tab {
+  padding: 8px 16px; font-size: 10px; letter-spacing: 1.5px; color: #4a3322;
+  cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s; user-select: none;
+}
+.tab:hover { color: #886633; }
+.tab.on { color: #FF8800; border-bottom: 2px solid #FF8800; background: #0d0d1a; }
+
+#conn-status { margin-left: auto; align-self: center; font-size: 9px; letter-spacing: 1px; color: #2a5533; }
+#conn-status.offline { color: #AA3322; }
+
+.panel { display: none; padding: 16px; }
+.panel.on { display: block; }
+
+.sec-hdr { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; margin-bottom: 10px; border-radius: 2px; }
+.sec-label { font-size: 11px; font-weight: 500; letter-spacing: 2px; }
+.sec-hint { font-size: 10px; color: #332211; letter-spacing: 1px; }
+
+button {
+  background: #1a0800; border: 0.5px solid #FF8800; color: #FF8800;
+  font-family: 'Courier New', Courier, monospace; font-size: 9px;
+  letter-spacing: 1px; padding: 4px 9px; cursor: pointer; border-radius: 2px;
+}
+button:hover { background: #2d1200; }
+button.dim { border-color: #334455; color: #556677; }
+button.dim:hover { border-color: #556677; color: #7799AA; }
+button.danger { border-color: #883322; color: #AA4433; }
+button.danger:hover { background: #1a0a08; }
+
+select, input[type="date"], input[type="number"] {
+  background: #0a0a1a; border: 0.5px solid #2a2a44; color: #9999AA;
+  font-family: 'Courier New', Courier, monospace; font-size: 10px;
+  padding: 4px 5px; border-radius: 2px;
+}
+.form-input {
+  width: 100%; background: #0a0a1a; border: 0.5px solid #2a2a44; color: #9999AA;
+  font-family: 'Courier New', Courier, monospace; font-size: 11px; padding: 5px 7px; border-radius: 2px;
+}
+.form-input:focus, select:focus, input:focus, textarea:focus { outline: none; border-color: #4a3366; }
+.form-row { margin-bottom: 8px; }
+.form-label { font-size: 9px; color: #443322; letter-spacing: 1px; display: block; margin-bottom: 3px; }
+.radio-row { display: flex; gap: 14px; }
+.radio-row label { font-size: 10px; color: #7777AA; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+/* ── DAILY LOG ── */
+#hm-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+#hm-week-label { font-size: 10px; color: #886644; letter-spacing: 1px; flex: 1; }
+#hm-grid { display: grid; gap: 3px; margin-bottom: 8px; }
+.hm-col-label { font-size: 8px; color: #443322; text-align: center; padding: 2px 0; letter-spacing: 0.5px; }
+.hm-col-goal { color: #665533; }
+.hm-row-total { font-size: 9px; color: #664422; display: flex; align-items: center; justify-content: center; }
+.hm-day-label { font-size: 10px; color: #4a3355; display: flex; align-items: center; justify-content: center; }
+.hm-day-label.today { color: #FF9922; }
+.hm-cell {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; cursor: pointer; border-radius: 1px; min-height: 28px; user-select: none;
+}
+.hm-col-total { font-size: 9px; color: #664422; text-align: center; padding: 2px 0; }
+.hm-col-total.goal-met { color: #33CC55; }
+.hm-col-total.goal-risk { color: #DD3322; }
+#hm-legend { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.hm-legend-squares { display: flex; gap: 2px; }
+.hm-legend-sq { width: 12px; height: 12px; border-radius: 1px; }
+.hm-legend-label { font-size: 9px; color: #443322; }
+#hm-week-total { font-size: 9px; color: #664422; margin-left: 12px; }
+
+/* trends */
+#trends-panel { display: none; margin-top: 14px; background: #07070f; border: 0.5px solid #1a1a2e; border-radius: 2px; padding: 12px; }
+#trends-panel.open { display: block; }
+.trend-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; border-bottom: 0.5px solid #0d0d1e; }
+.trend-key { width: 64px; font-size: 10px; color: #886644; letter-spacing: 1px; }
+.trend-key.dormant { color: #FFAA22; }
+.trend-spark { display: flex; align-items: flex-end; gap: 2px; height: 26px; }
+.trend-bar { width: 12px; background: #7a4100; border-radius: 1px 1px 0 0; min-height: 1px; }
+.trend-bar.cur { background: #FF9922; }
+.trend-meta { font-size: 9px; color: #554433; margin-left: 8px; }
+
+/* domain settings */
+#domain-panel { display: none; margin-top: 14px; background: #07070f; border: 0.5px solid #1a1a2e; border-radius: 2px; padding: 12px; }
+#domain-panel.open { display: block; }
+.dom-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 0.5px solid #0d0d1e; }
+.dom-key { width: 64px; font-size: 10px; color: #FF9922; letter-spacing: 1px; }
+.dom-row input[type=text] { width: 120px; }
+.dom-row input[type=number] { width: 52px; }
+
+/* ── DIARIES ── */
+#proj-toolbar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+#proj-search { flex: 1; max-width: 320px; }
+#proj-grid, #proj-archive-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.proj-card { background: #0e0e22; border-left: 2.5px solid #FF8800; padding: 10px 12px; cursor: pointer; border-radius: 2px; transition: background 0.1s; }
+.proj-card:hover { background: #13132a; }
+.proj-card.selected { background: #181832; }
+.proj-card.archived { opacity: 0.45; }
+.proj-cat { font-size: 9px; letter-spacing: 1.5px; margin-bottom: 4px; }
+.proj-name { font-size: 14px; font-weight: bold; color: #FF9922; margin-bottom: 3px; }
+.proj-note { font-size: 10px; color: #4a4a60; margin-bottom: 5px; }
+.proj-count { font-size: 9px; color: #443344; }
+#archive-hdr { font-size: 9px; color: #443344; letter-spacing: 2px; margin: 10px 0 6px; cursor: pointer; user-select: none; }
+#diary-panel, #add-proj-panel, #search-results {
+  display: none; background: #07070f; border: 0.5px solid #1a1a2e; border-radius: 2px; padding: 14px; margin-bottom: 12px;
+}
+#diary-panel.open, #add-proj-panel.open, #search-results.open { display: block; }
+#diary-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; }
+#diary-title { font-size: 13px; font-weight: bold; color: #FF9922; letter-spacing: 1px; flex: 1; }
+#diary-entries { max-height: 320px; overflow-y: auto; margin-bottom: 12px; }
+.diary-entry { border-bottom: 0.5px solid #0f0f20; padding: 8px 0; }
+.diary-ts { font-size: 9px; color: #443322; margin-bottom: 4px; }
+.diary-text { font-size: 12px; color: #8888AA; white-space: pre-wrap; line-height: 1.5; }
+.diary-empty { font-size: 11px; color: #333344; padding: 12px 0; }
+#diary-new { display: flex; flex-direction: column; gap: 6px; }
+#diary-textarea {
+  background: #0a0a1a; border: 0.5px solid #2a2a44; color: #9999AA;
+  font-family: 'Courier New', Courier, monospace; font-size: 12px; padding: 8px;
+  resize: vertical; min-height: 72px; border-radius: 2px;
+}
+
+/* ── SOCIAL ── */
+#social-layout { display: grid; grid-template-columns: 1fr 260px; gap: 16px; }
+#queue-badge { font-size: 10px; letter-spacing: 1px; margin-bottom: 8px; }
+#queue-badge .overdue { color: #DD3322; }
+#queue-badge .dueweek { color: #DDAA22; }
+.friend-row {
+  background: #0e0e22; border-left: 2.5px solid #CC6600; padding: 8px 12px;
+  margin-bottom: 4px; border-radius: 2px; display: flex; align-items: center; gap: 10px;
+}
+.friend-row.phase-scheduled { border-left-color: #1a6633; }
+.friend-row.phase-done { border-left-color: #141428; opacity: 0.35; }
+.friend-row.overdue { border-left-color: #DD3322; }
+.friend-info { flex: 1; min-width: 0; cursor: pointer; }
+.friend-name { font-size: 13px; font-weight: bold; color: #FF9922; margin-bottom: 2px; }
+.friend-name .od-badge { font-size: 9px; color: #DD3322; margin-left: 6px; }
+.friend-name .aging-badge { font-size: 9px; color: #FFAA22; margin-left: 6px; }
+.friend-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.friend-type-badge { font-size: 8px; letter-spacing: 1px; border: 0.5px solid #FF8800; color: #FF8800; padding: 1px 5px; border-radius: 2px; }
+.friend-type-badge.local { border-color: #33DDAA; color: #33DDAA; }
+.friend-phase { font-size: 9px; letter-spacing: 1px; }
+.friend-phase.to-schedule { color: #CC6600; }
+.friend-phase.scheduled { color: #22AA44; }
+.friend-phase.done { color: #444455; }
+.friend-due { font-size: 9px; color: #554455; }
+.friend-note { font-size: 9px; color: #554433; margin-top: 2px; }
+.friend-actions { display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
+.friend-history { background: #07070f; border-left: 2.5px solid #1a1a2e; margin: -2px 0 6px 14px; padding: 6px 12px; border-radius: 2px; }
+.hist-row { font-size: 10px; color: #666688; padding: 2px 0; }
+.hist-row .h-date { color: #443344; margin-right: 8px; }
+.hist-row .h-action { color: #886644; margin-right: 8px; }
+#add-friend-form { background: #07070f; border: 0.5px solid #1a1a2e; border-radius: 2px; padding: 12px; align-self: start; }
+#add-friend-form h3 { font-size: 10px; color: #33DDAA; letter-spacing: 2px; margin-bottom: 10px; }
+
+/* modal */
+#modal-bg {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,5,0.75);
+  align-items: center; justify-content: center; z-index: 50;
+}
+#modal-bg.open { display: flex; }
+#modal {
+  background: #0a0a18; border: 1px solid #FF8800; border-radius: 3px;
+  padding: 18px; width: 360px;
+}
+#modal h3 { font-size: 11px; color: #FF8800; letter-spacing: 2px; margin-bottom: 10px; }
+#modal-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+
+/* ── TODOS ── */
+#todo-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.todo-col { background: #07070f; border: 0.5px solid #1a1a2e; border-radius: 2px; padding: 12px; }
+.todo-col-title { font-size: 11px; color: #88CC44; letter-spacing: 2px; margin-bottom: 10px; }
+.todo-add-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.todo-add-input { flex: 1 1 100%; background: #0a0a1a; border: 0.5px solid #2a2a44; color: #9999AA; font-family: 'Courier New', Courier, monospace; font-size: 11px; padding: 5px 7px; border-radius: 2px; }
+.todo-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 0.5px solid #0d0d1e; }
+.todo-item:last-child { border-bottom: none; }
+.todo-cb { cursor: pointer; accent-color: #88CC44; }
+.todo-text { flex: 1; font-size: 12px; color: #8888AA; line-height: 1.4; }
+.todo-text.done { color: #2a2a3a; text-decoration: line-through; }
+.todo-due { font-size: 9px; color: #554455; white-space: nowrap; }
+.todo-due.overdue { color: #DD3322; }
+.todo-recur { font-size: 10px; color: #557788; }
+.todo-del { font-size: 10px; color: #2a2a3a; cursor: pointer; padding: 0 4px; background: none; border: none; }
+.todo-del:hover { color: #AA4422; background: none; }
+.todo-empty { font-size: 10px; color: #2a2a3a; padding: 6px 0; }
+.done-hdr { font-size: 9px; color: #334422; letter-spacing: 1px; margin-top: 10px; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+.done-list { display: none; }
+.done-list.open { display: block; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #07070f; }
+::-webkit-scrollbar-thumb { background: #2a1a00; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div id="lcars-header">
+  <div id="lcars-pill">LCARS</div>
+  <div id="lcars-divider"><div id="lcars-bar1"></div><div id="lcars-bar2"></div></div>
+  <div id="lcars-right">PERSONAL SYSTEMS v2 &nbsp;|&nbsp; <span id="stardate">STARDATE ---</span></div>
+</div>
+
+<div id="tab-bar">
+  <div class="tab on" onclick="switchTab('daily')">DAILY LOG</div>
+  <div class="tab" onclick="switchTab('diaries')">DIARIES</div>
+  <div class="tab" onclick="switchTab('social')">SOCIAL QUEUE</div>
+  <div class="tab" onclick="switchTab('todos')">LORI + HOUSEKEEPING</div>
+  <span id="conn-status">● LINK</span>
+</div>
+
+<!-- ═══ DAILY LOG ═══ -->
+<div id="panel-daily" class="panel on">
+  <div class="sec-hdr" style="background:#0d0800;">
+    <span class="sec-label" style="color:#FF8800;">DAILY LOG</span>
+    <span class="sec-hint">LEFT CLICK +1H · RIGHT CLICK -1H</span>
+  </div>
+  <div id="hm-nav">
+    <button onclick="hmNav(-1)">◀ PREV</button>
+    <button onclick="hmNav(0)">TODAY</button>
+    <button onclick="hmNav(1)">NEXT ▶</button>
+    <span id="hm-week-label"></span>
+    <button class="dim" onclick="toggleTrends()">TRENDS</button>
+    <button class="dim" onclick="toggleDomains()">⚙ DOMAINS</button>
+  </div>
+  <div id="hm-grid"></div>
+  <div id="hm-legend"></div>
+  <div id="trends-panel"></div>
+  <div id="domain-panel"></div>
+</div>
+
+<!-- ═══ DIARIES ═══ -->
+<div id="panel-diaries" class="panel">
+  <div class="sec-hdr" style="background:#080816;">
+    <span class="sec-label" style="color:#8899FF;">PROJECT DIARIES</span>
+    <span class="sec-hint">CLICK CARD TO OPEN JOURNAL</span>
+  </div>
+  <div id="proj-toolbar">
+    <input type="text" id="proj-search" class="form-input" placeholder="Search entries…"
+           onkeydown="if(event.key==='Enter')searchEntries()">
+    <button class="dim" onclick="searchEntries()">SEARCH</button>
+    <button onclick="toggleAddProject()">+ PROJECT</button>
+  </div>
+  <div id="search-results"></div>
+  <div id="add-proj-panel">
+    <div class="form-row"><label class="form-label">NAME</label>
+      <input type="text" id="np-name" class="form-input"></div>
+    <div class="form-row"><label class="form-label">DOMAIN</label>
+      <select id="np-domain"></select></div>
+    <div class="form-row"><label class="form-label">ACCENT COLOR</label>
+      <input type="text" id="np-color" class="form-input" value="#FF8800"></div>
+    <div class="form-row"><label class="form-label">NOTE</label>
+      <input type="text" id="np-note" class="form-input"></div>
+    <button onclick="createProject()">CREATE PROJECT</button>
+  </div>
+  <div id="proj-grid"></div>
+  <div id="archive-hdr" onclick="toggleArchive()">▸ ARCHIVE</div>
+  <div id="proj-archive-grid" style="display:none;"></div>
+  <div id="diary-panel">
+    <div id="diary-header">
+      <span id="diary-title"></span>
+      <button class="dim" onclick="setProjStatus('PAUSED')">PAUSE</button>
+      <button class="dim" onclick="setProjStatus('DONE')">MARK DONE</button>
+      <button class="dim" onclick="setProjStatus('ACTIVE')">REACTIVATE</button>
+      <button onclick="closeDiary()">CLOSE ✕</button>
+    </div>
+    <div id="diary-entries"></div>
+    <div id="diary-new">
+      <textarea id="diary-textarea" placeholder="New entry…"></textarea>
+      <button onclick="saveDiaryEntry()" style="align-self:flex-start;">SAVE ENTRY</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SOCIAL ═══ -->
+<div id="panel-social" class="panel">
+  <div class="sec-hdr" style="background:#06100e;">
+    <span class="sec-label" style="color:#33DDAA;">SOCIAL QUEUE</span>
+    <span class="sec-hint">CLICK NAME FOR HISTORY · MAINTAIN CONTACT CYCLE</span>
+  </div>
+  <div id="queue-badge"></div>
+  <div id="social-layout">
+    <div id="friends-list"></div>
+    <div id="add-friend-form">
+      <h3>ADD CONTACT</h3>
+      <div class="form-row"><label class="form-label">NAME</label>
+        <input type="text" id="new-friend-name" class="form-input"></div>
+      <div class="form-row"><label class="form-label">TYPE</label>
+        <div class="radio-row">
+          <label><input type="radio" name="new-friend-type" value="PHONE" checked> PHONE</label>
+          <label><input type="radio" name="new-friend-type" value="LOCAL"> LOCAL</label>
+        </div></div>
+      <div class="form-row"><label class="form-label">CADENCE (DAYS)</label>
+        <input type="number" id="new-friend-cadence" class="form-input" value="30" min="1"></div>
+      <div class="form-row"><label class="form-label">NOTE (OPTIONAL)</label>
+        <input type="text" id="new-friend-note" class="form-input"></div>
+      <button onclick="addFriend()">ADD CONTACT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TODOS ═══ -->
+<div id="panel-todos" class="panel">
+  <div class="sec-hdr" style="background:#060e04;">
+    <span class="sec-label" style="color:#88CC44;">LORI + HOUSEKEEPING</span>
+    <span class="sec-hint">DUE DATES · RECURRING · COMPLETION HISTORY</span>
+  </div>
+  <div id="todo-layout">
+    <div class="todo-col">
+      <div class="todo-col-title">LORI TO-DOS</div>
+      <div class="todo-add-row">
+        <input type="text" id="lori-input" class="todo-add-input" placeholder="New item…"
+               onkeydown="if(event.key==='Enter')addTodo('lori')">
+        <input type="date" id="lori-due">
+        <select id="lori-recur">
+          <option value="none">no repeat</option><option value="weekly">weekly</option>
+          <option value="monthly">monthly</option><option value="custom">custom…</option>
+        </select>
+        <input type="number" id="lori-recur-days" placeholder="days" style="width:54px;display:none;" min="1">
+        <button onclick="addTodo('lori')">ADD</button>
+      </div>
+      <div id="lori-list"></div>
+      <div class="done-hdr" onclick="toggleDone('lori')">
+        <span>▸ DONE (<span id="lori-done-count">0</span>)</span>
+        <button class="dim" onclick="event.stopPropagation();clearCompleted('lori')">CLEAR</button>
+      </div>
+      <div id="lori-done" class="done-list"></div>
+    </div>
+    <div class="todo-col">
+      <div class="todo-col-title">HOUSEKEEPING</div>
+      <div class="todo-add-row">
+        <input type="text" id="house-input" class="todo-add-input" placeholder="New item…"
+               onkeydown="if(event.key==='Enter')addTodo('house')">
+        <input type="date" id="house-due">
+        <select id="house-recur">
+          <option value="none">no repeat</option><option value="weekly">weekly</option>
+          <option value="monthly">monthly</option><option value="custom">custom…</option>
+        </select>
+        <input type="number" id="house-recur-days" placeholder="days" style="width:54px;display:none;" min="1">
+        <button onclick="addTodo('house')">ADD</button>
+      </div>
+      <div id="house-list"></div>
+      <div class="done-hdr" onclick="toggleDone('house')">
+        <span>▸ DONE (<span id="house-done-count">0</span>)</span>
+        <button class="dim" onclick="event.stopPropagation();clearCompleted('house')">CLEAR</button>
+      </div>
+      <div id="house-done" class="done-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL ═══ -->
+<div id="modal-bg">
+  <div id="modal">
+    <h3 id="modal-title">NOTE</h3>
+    <input type="text" id="modal-input" class="form-input" placeholder="Optional note…"
+           onkeydown="if(event.key==='Enter')modalOk()">
+    <div id="modal-actions">
+      <button class="dim" onclick="modalCancel()">CANCEL</button>
+      <button onclick="modalOk()">CONFIRM</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// API helper
+// ════════════════════════════════════════════════════════
+async function api(path, opts) {
+  opts = opts || {};
+  if (opts.body !== undefined) {
+    opts.headers = { 'Content-Type': 'application/json' };
+    opts.body = JSON.stringify(opts.body);
+  }
+  try {
+    const r = await fetch(path, opts);
+    setConn(true);
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.detail || r.statusText);
+    }
+    return await r.json();
+  } catch (e) {
+    if (e instanceof TypeError) setConn(false);
+    throw e;
+  }
+}
+function setConn(ok) {
+  const el = document.getElementById('conn-status');
+  el.textContent = ok ? '● LINK' : '● OFFLINE';
+  el.className = ok ? '' : 'offline';
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ════════════════════════════════════════════════════════
+// Tabs + stardate
+// ════════════════════════════════════════════════════════
+function switchTab(name) {
+  const map = { daily: 0, diaries: 1, social: 2, todos: 3 };
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(t => t.classList.remove('on'));
+  panels.forEach(p => p.classList.remove('on'));
+  tabs[map[name]].classList.add('on');
+  panels[map[name]].classList.add('on');
+}
+function updateStardate() {
+  const d = new Date(), yr = d.getFullYear();
+  const doy = Math.floor((d - new Date(yr, 0, 0)) / 86400000);
+  document.getElementById('stardate').textContent =
+    'STARDATE ' + (yr - 1900) + '.' + String(doy).padStart(3, '0');
+}
+updateStardate(); setInterval(updateStardate, 60000);
+
+// ════════════════════════════════════════════════════════
+// Modal (note prompt)
+// ════════════════════════════════════════════════════════
+let modalResolve = null;
+function askNote(title) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-input').value = '';
+    document.getElementById('modal-bg').classList.add('open');
+    setTimeout(() => document.getElementById('modal-input').focus(), 50);
+  });
+}
+function modalOk() {
+  document.getElementById('modal-bg').classList.remove('open');
+  if (modalResolve) modalResolve(document.getElementById('modal-input').value.trim());
+  modalResolve = null;
+}
+function modalCancel() {
+  document.getElementById('modal-bg').classList.remove('open');
+  if (modalResolve) modalResolve(null);
+  modalResolve = null;
+}
+
+// ════════════════════════════════════════════════════════
+// MODULE 1 — DAILY LOG
+// ════════════════════════════════════════════════════════
+const HM_COLORS = ['#09091c','#1e1004','#301800','#4d2800','#7a4100',
+                   '#AA5E00','#CC7200','#EE8500','#FF9922'];
+const DAY_NAMES = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+let hmOffset = 0, hmData = null;
+
+function hmNav(dir) {
+  hmOffset = dir === 0 ? 0 : hmOffset + dir;
+  loadWeek();
+}
+
+async function loadWeek() {
+  hmData = await api('/api/log/week?offset=' + hmOffset);
+  renderHeatmap();
+}
+
+async function hmSet(dateStr, key, hours) {
+  await api('/api/log', { method: 'POST',
+    body: { date: dateStr, domain_key: key, hours: hours } });
+  await loadWeek();
+}
+
+function hmClick(dateStr, key) {
+  const v = hmData.cells[dateStr + '_' + key] || 0;
+  hmSet(dateStr, key, Math.min(8, v + 1));
+}
+function hmRight(evt, dateStr, key) {
+  evt.preventDefault();
+  const v = hmData.cells[dateStr + '_' + key] || 0;
+  if (v > 0) hmSet(dateStr, key, v - 1);
+}
+
+function renderHeatmap() {
+  const d = hmData;
+  const doms = d.domains;
+  const grid = document.getElementById('hm-grid');
+  grid.style.gridTemplateColumns = '42px repeat(' + doms.length + ', 1fr) 32px';
+  document.getElementById('hm-week-label').textContent =
+    'WEEK OF ' + d.week_start + (hmOffset === 0 ? '  (current)' : '');
+
+  let html = '<div></div>';
+  for (const dom of doms) {
+    const goal = dom.weekly_goal
+      ? ' <span class="hm-col-goal">·/' + dom.weekly_goal + '</span>' : '';
+    html += '<div class="hm-col-label">' + esc(dom.key) + goal + '</div>';
+  }
+  html += '<div></div>';
+
+  const todayIdx = d.days.indexOf(d.today);
+  for (let r = 0; r < 7; r++) {
+    const dateStr = d.days[r];
+    const isToday = r === todayIdx;
+    let rowSum = 0;
+    let cells = '';
+    for (const dom of doms) {
+      const v = d.cells[dateStr + '_' + dom.key] || 0;
+      rowSum += v;
+      cells += '<div class="hm-cell" style="background:' + HM_COLORS[v]
+        + ';color:' + (v >= 5 ? '#1a0800' : '#553311') + ';'
+        + (isToday ? 'outline:1px solid #2a1800;' : '') + '"'
+        + ' onclick="hmClick(\'' + dateStr + '\',\'' + dom.key + '\')"'
+        + ' oncontextmenu="hmRight(event,\'' + dateStr + '\',\'' + dom.key + '\')">'
+        + (v || '') + '</div>';
+    }
+    html += '<div class="hm-day-label' + (isToday ? ' today' : '') + '">'
+      + DAY_NAMES[r] + '</div>' + cells
+      + '<div class="hm-row-total">' + (rowSum ? rowSum + 'h' : '—') + '</div>';
+  }
+
+  // column totals with goal coloring
+  const dow = new Date(d.today + 'T12:00').getDay(); // 0=Sun..5=Fri
+  const lateWeek = hmOffset === 0 && (dow === 0 || dow >= 5);
+  html += '<div></div>';
+  for (const dom of doms) {
+    const total = d.col_totals[dom.key] || 0;
+    let cls = '';
+    if (dom.weekly_goal > 0) {
+      if (total >= dom.weekly_goal) cls = ' goal-met';
+      else if (lateWeek && total < 0.6 * dom.weekly_goal) cls = ' goal-risk';
+    }
+    html += '<div class="hm-col-total' + cls + '">' + (total || '—') + '</div>';
+  }
+  html += '<div></div>';
+  grid.innerHTML = html;
+
+  let lhtml = '<span class="hm-legend-label">0</span><div class="hm-legend-squares">';
+  for (const c of HM_COLORS) lhtml += '<div class="hm-legend-sq" style="background:' + c + '"></div>';
+  lhtml += '</div><span class="hm-legend-label">8 hrs</span>'
+    + '<span id="hm-week-total">' + d.week_total + 'h total this week</span>';
+  document.getElementById('hm-legend').innerHTML = lhtml;
+}
+
+// trends
+async function toggleTrends() {
+  const p = document.getElementById('trends-panel');
+  if (p.classList.contains('open')) { p.classList.remove('open'); return; }
+  const t = await api('/api/log/trends?weeks=8');
+  let html = '<div class="sec-hint" style="margin-bottom:8px;">LAST 8 WEEKS · STREAK = CONSECUTIVE WEEKS ≥1H</div>';
+  for (const dom of t.domains) {
+    const max = Math.max.apply(null, dom.weeks.concat([1]));
+    let spark = '';
+    dom.weeks.forEach((v, i) => {
+      const h = Math.max(1, Math.round(v / max * 24));
+      spark += '<div class="trend-bar' + (i === dom.weeks.length - 1 ? ' cur' : '')
+        + '" style="height:' + h + 'px;" title="' + v + 'h"></div>';
+    });
+    html += '<div class="trend-row">'
+      + '<div class="trend-key' + (dom.dormant ? ' dormant' : '') + '">'
+      + esc(dom.key) + (dom.dormant ? ' ⚠' : '') + '</div>'
+      + '<div class="trend-spark">' + spark + '</div>'
+      + '<div class="trend-meta">' + dom.weeks[dom.weeks.length - 1] + 'h this wk'
+      + ' · streak ' + dom.streak
+      + (dom.weekly_goal ? ' · goal ' + dom.weekly_goal + 'h' : '') + '</div>'
+      + '</div>';
+  }
+  p.innerHTML = html;
+  p.classList.add('open');
+}
+
+// domain settings
+async function toggleDomains() {
+  const p = document.getElementById('domain-panel');
+  if (p.classList.contains('open')) { p.classList.remove('open'); return; }
+  await renderDomainPanel();
+  p.classList.add('open');
+}
+
+async function renderDomainPanel() {
+  const doms = await api('/api/domains');
+  const p = document.getElementById('domain-panel');
+  let html = '<div class="sec-hint" style="margin-bottom:8px;">DOMAIN SETTINGS — GOAL 0 = NO GOAL</div>';
+  for (const d of doms.filter(x => x.active)) {
+    html += '<div class="dom-row"><span class="dom-key">' + esc(d.key) + '</span>'
+      + '<input type="text" id="dl-' + d.id + '" value="' + esc(d.label) + '" class="form-input">'
+      + '<input type="number" id="dg-' + d.id + '" value="' + d.weekly_goal + '" min="0" max="60">'
+      + '<button class="dim" onclick="saveDomain(' + d.id + ')">SAVE</button>'
+      + '<button class="dim" onclick="moveDomain(' + d.id + ',-1)">▲</button>'
+      + '<button class="dim" onclick="moveDomain(' + d.id + ',1)">▼</button>'
+      + '<button class="danger" onclick="archiveDomain(' + d.id + ',\'' + esc(d.key) + '\')">ARCHIVE</button>'
+      + '</div>';
+  }
+  const archived = doms.filter(x => !x.active);
+  if (archived.length) {
+    html += '<div class="sec-hint" style="margin:8px 0 4px;">ARCHIVED</div>';
+    for (const d of archived) {
+      html += '<div class="dom-row"><span class="dom-key" style="color:#443344;">' + esc(d.key) + '</span>'
+        + '<button class="dim" onclick="unarchiveDomain(' + d.id + ')">RESTORE</button></div>';
+    }
+  }
+  html += '<div class="dom-row" style="border-bottom:none;margin-top:6px;">'
+    + '<input type="text" id="nd-key" class="form-input" placeholder="KEY" style="width:80px;">'
+    + '<input type="text" id="nd-label" class="form-input" placeholder="Label" style="width:120px;">'
+    + '<input type="number" id="nd-goal" value="0" min="0">'
+    + '<button onclick="addDomain()">+ ADD DOMAIN</button></div>';
+  p.innerHTML = html;
+}
+
+async function saveDomain(id) {
+  await api('/api/domains/' + id, { method: 'PATCH', body: {
+    label: document.getElementById('dl-' + id).value,
+    weekly_goal: parseInt(document.getElementById('dg-' + id).value) || 0,
+  }});
+  await renderDomainPanel(); await loadWeek();
+}
+async function moveDomain(id, dir) {
+  const doms = (await api('/api/domains')).filter(x => x.active);
+  const idx = doms.findIndex(d => d.id === id);
+  const j = idx + dir;
+  if (j < 0 || j >= doms.length) return;
+  await api('/api/domains/' + doms[idx].id, { method: 'PATCH', body: { sort_order: doms[j].sort_order } });
+  await api('/api/domains/' + doms[j].id, { method: 'PATCH', body: { sort_order: doms[idx].sort_order } });
+  await renderDomainPanel(); await loadWeek();
+}
+async function archiveDomain(id, key) {
+  if (!confirm('Archive ' + key + '? History is preserved.')) return;
+  await api('/api/domains/' + id, { method: 'PATCH', body: { active: false } });
+  await renderDomainPanel(); await loadWeek();
+}
+async function unarchiveDomain(id) {
+  await api('/api/domains/' + id, { method: 'PATCH', body: { active: true } });
+  await renderDomainPanel(); await loadWeek();
+}
+async function addDomain() {
+  const key = document.getElementById('nd-key').value.trim();
+  if (!key) return;
+  await api('/api/domains', { method: 'POST', body: {
+    key: key,
+    label: document.getElementById('nd-label').value.trim() || key,
+    weekly_goal: parseInt(document.getElementById('nd-goal').value) || 0,
+  }});
+  await renderDomainPanel(); await loadWeek();
+}
+
+// ════════════════════════════════════════════════════════
+// MODULE 2 — PROJECT DIARIES
+// ════════════════════════════════════════════════════════
+let projects = [], activeProjId = null;
+
+async function loadProjects() {
+  projects = await api('/api/projects');
+  renderProjects();
+  // populate domain select for new-project form
+  const doms = await api('/api/domains');
+  document.getElementById('np-domain').innerHTML =
+    '<option value="">— none —</option>'
+    + doms.filter(d => d.active).map(d =>
+        '<option value="' + esc(d.key) + '">' + esc(d.key) + '</option>').join('');
+}
+
+function projCard(p, archived) {
+  return '<div class="proj-card' + (activeProjId === p.id ? ' selected' : '')
+    + (archived ? ' archived' : '') + '" onclick="openDiary(' + p.id + ')"'
+    + ' style="border-left-color:' + esc(p.accent_color) + '">'
+    + '<div class="proj-cat" style="color:' + esc(p.accent_color) + '">'
+    + esc(p.domain_key || '—') + (archived ? ' · ' + p.status : '') + '</div>'
+    + '<div class="proj-name">' + esc(p.name) + '</div>'
+    + '<div class="proj-note">' + esc(p.note || '') + '</div>'
+    + '<div class="proj-count">' + (p.entry_count === 0 ? 'no entries'
+      : p.entry_count + (p.entry_count === 1 ? ' entry' : ' entries')) + '</div>'
+    + '</div>';
+}
+
+function renderProjects() {
+  const active = projects.filter(p => p.status === 'ACTIVE');
+  const arch = projects.filter(p => p.status !== 'ACTIVE');
+  document.getElementById('proj-grid').innerHTML = active.map(p => projCard(p, false)).join('');
+  document.getElementById('proj-archive-grid').innerHTML = arch.map(p => projCard(p, true)).join('');
+  document.getElementById('archive-hdr').textContent =
+    (document.getElementById('proj-archive-grid').style.display === 'none' ? '▸' : '▾')
+    + ' ARCHIVE (' + arch.length + ')';
+}
+
+function toggleArchive() {
+  const g = document.getElementById('proj-archive-grid');
+  g.style.display = g.style.display === 'none' ? 'grid' : 'none';
+  renderProjects();
+}
+function toggleAddProject() {
+  document.getElementById('add-proj-panel').classList.toggle('open');
+}
+
+async function createProject() {
+  const name = document.getElementById('np-name').value.trim();
+  if (!name) return;
+  await api('/api/projects', { method: 'POST', body: {
+    name: name,
+    domain_key: document.getElementById('np-domain').value || null,
+    accent_color: document.getElementById('np-color').value.trim() || '#FF8800',
+    note: document.getElementById('np-note').value.trim(),
+  }});
+  document.getElementById('np-name').value = '';
+  document.getElementById('np-note').value = '';
+  document.getElementById('add-proj-panel').classList.remove('open');
+  await loadProjects();
+}
+
+async function openDiary(id) {
+  activeProjId = id;
+  renderProjects();
+  const p = projects.find(x => x.id === id);
+  document.getElementById('diary-title').textContent = p ? p.name : '';
+  document.getElementById('diary-panel').classList.add('open');
+  const entries = await api('/api/diary/' + id);
+  const el = document.getElementById('diary-entries');
+  el.innerHTML = entries.length === 0
+    ? '<div class="diary-empty">No entries yet.</div>'
+    : entries.map(e => '<div class="diary-entry"><div class="diary-ts">'
+        + new Date(e.created_at).toLocaleString('en-US', { weekday:'short', month:'short',
+            day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' })
+        + '</div><div class="diary-text">' + esc(e.text) + '</div></div>').join('');
+  document.getElementById('diary-textarea').value = '';
+}
+
+function closeDiary() {
+  activeProjId = null;
+  document.getElementById('diary-panel').classList.remove('open');
+  renderProjects();
+}
+
+async function saveDiaryEntry() {
+  const text = document.getElementById('diary-textarea').value.trim();
+  if (!text || !activeProjId) return;
+  await api('/api/diary/' + activeProjId, { method: 'POST', body: { text: text } });
+  await loadProjects();
+  await openDiary(activeProjId);
+}
+
+async function setProjStatus(status) {
+  if (!activeProjId) return;
+  await api('/api/projects/' + activeProjId, { method: 'PATCH', body: { status: status } });
+  await loadProjects();
+}
+
+async function searchEntries() {
+  const q = document.getElementById('proj-search').value.trim();
+  const box = document.getElementById('search-results');
+  if (!q) { box.classList.remove('open'); return; }
+  const results = await api('/api/diary/search?q=' + encodeURIComponent(q));
+  box.innerHTML = '<div class="sec-hint" style="margin-bottom:6px;">'
+    + results.length + ' MATCH(ES) FOR "' + esc(q) + '" '
+    + '<button class="dim" onclick="document.getElementById(\'search-results\').classList.remove(\'open\')">✕</button></div>'
+    + (results.map(r => '<div class="diary-entry">'
+      + '<div class="diary-ts">' + esc(r.project_name) + ' · '
+      + new Date(r.created_at).toLocaleDateString() + '</div>'
+      + '<div class="diary-text">' + esc(r.text.length > 200 ? r.text.slice(0, 200) + '…' : r.text)
+      + '</div></div>').join('') || '');
+  box.classList.add('open');
+}
+
+// ════════════════════════════════════════════════════════
+// MODULE 3 — SOCIAL QUEUE
+// ════════════════════════════════════════════════════════
+let openHistoryId = null;
+
+async function loadFriends() {
+  const data = await api('/api/friends');
+  const c = data.counts;
+  document.getElementById('queue-badge').innerHTML =
+    '<span class="overdue">' + c.overdue + ' OVERDUE</span> · '
+    + '<span class="dueweek">' + c.due_this_week + ' DUE THIS WEEK</span>';
+
+  let html = '';
+  for (const f of data.friends) {
+    let rowClass = 'friend-row';
+    if (f.phase === 'SCHEDULED') rowClass += ' phase-scheduled';
+    if (f.phase === 'DONE') rowClass += ' phase-done';
+    if (f.overdue_days) rowClass += ' overdue';
+
+    const phaseClass = f.phase === 'TO_SCHEDULE' ? 'to-schedule'
+      : f.phase === 'SCHEDULED' ? 'scheduled' : 'done';
+    const phaseLabel = f.phase.replace('_', ' ');
+
+    let action = '';
+    if (f.phase === 'TO_SCHEDULE') {
+      action = '<button onclick="advanceFriend(' + f.id + ',\'SCHEDULE\')">'
+        + (f.type === 'LOCAL' ? 'CALL+LUNCH' : 'CALL') + '</button>';
+    } else if (f.phase === 'SCHEDULED') {
+      action = '<button onclick="advanceFriend(' + f.id + ',\'DONE\')">DONE ✓</button>';
+    } else {
+      action = '<button class="dim" onclick="resetFriend(' + f.id + ')">RESET</button>';
+    }
+
+    const lastDone = f.last_done_at
+      ? 'last: ' + new Date(f.last_done_at).toLocaleDateString() : 'never contacted';
+    const due = f.due_date ? ' · due ' + f.due_date : '';
+
+    html += '<div class="' + rowClass + '">'
+      + '<div class="friend-info" onclick="toggleHistory(' + f.id + ')">'
+      + '<div class="friend-name">' + esc(f.name)
+      + (f.overdue_days ? '<span class="od-badge">+' + f.overdue_days + 'd OVERDUE</span>' : '')
+      + (f.aging ? '<span class="aging-badge">AGING</span>' : '') + '</div>'
+      + '<div class="friend-meta">'
+      + '<span class="friend-type-badge' + (f.type === 'LOCAL' ? ' local' : '') + '">' + f.type + '</span>'
+      + '<span class="friend-phase ' + phaseClass + '">' + phaseLabel + '</span>'
+      + '<span class="friend-due">' + lastDone + due + '</span>'
+      + '</div>'
+      + (f.static_note ? '<div class="friend-note">' + esc(f.static_note) + '</div>' : '')
+      + '</div>'
+      + '<div class="friend-actions">'
+      + '<button class="dim" onclick="toggleType(' + f.id + ',\'' + f.type + '\')">'
+      + (f.type === 'LOCAL' ? '→PHONE' : '→LOCAL') + '</button>'
+      + action
+      + '<button class="danger" onclick="archiveFriend(' + f.id + ',\'' + esc(f.name) + '\')">🗑</button>'
+      + '</div></div>';
+    if (openHistoryId === f.id) {
+      html += '<div class="friend-history" id="hist-' + f.id + '">loading…</div>';
+    }
+  }
+  document.getElementById('friends-list').innerHTML = html;
+  if (openHistoryId) renderHistory(openHistoryId);
+}
+
+async function toggleHistory(id) {
+  openHistoryId = openHistoryId === id ? null : id;
+  await loadFriends();
+}
+async function renderHistory(id) {
+  const el = document.getElementById('hist-' + id);
+  if (!el) return;
+  const hist = await api('/api/friends/' + id + '/history');
+  el.innerHTML = hist.length === 0
+    ? '<div class="hist-row">No contact history yet.</div>'
+    : hist.map(h => '<div class="hist-row">'
+        + '<span class="h-date">' + new Date(h.created_at).toLocaleDateString() + '</span>'
+        + '<span class="h-action">' + h.action + '</span>'
+        + esc(h.note || '') + '</div>').join('');
+}
+
+async function advanceFriend(id, kind) {
+  const note = await askNote(kind === 'SCHEDULE' ? 'SCHEDULE — NOTE' : 'MARK DONE — NOTE');
+  if (note === null) return;
+  await api('/api/friends/' + id + '/advance', { method: 'POST', body: { note: note } });
+  await loadFriends();
+}
+async function resetFriend(id) {
+  await api('/api/friends/' + id + '/reset', { method: 'POST', body: {} });
+  await loadFriends();
+}
+async function toggleType(id, cur) {
+  await api('/api/friends/' + id, { method: 'PATCH',
+    body: { type: cur === 'LOCAL' ? 'PHONE' : 'LOCAL' } });
+  await loadFriends();
+}
+async function archiveFriend(id, name) {
+  if (!confirm('Archive ' + name + '? Contact history is preserved.')) return;
+  await api('/api/friends/' + id, { method: 'DELETE' });
+  await loadFriends();
+}
+async function addFriend() {
+  const name = document.getElementById('new-friend-name').value.trim();
+  if (!name) return;
+  const type = document.querySelector('input[name="new-friend-type"]:checked').value;
+  await api('/api/friends', { method: 'POST', body: {
+    name: name, type: type,
+    cadence_days: parseInt(document.getElementById('new-friend-cadence').value) || 30,
+    static_note: document.getElementById('new-friend-note').value.trim(),
+  }});
+  document.getElementById('new-friend-name').value = '';
+  document.getElementById('new-friend-note').value = '';
+  await loadFriends();
+}
+
+// ════════════════════════════════════════════════════════
+// MODULE 4 — TODOS
+// ════════════════════════════════════════════════════════
+['lori', 'house'].forEach(list => {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById(list + '-recur').addEventListener('change', e => {
+      document.getElementById(list + '-recur-days').style.display =
+        e.target.value === 'custom' ? 'inline-block' : 'none';
+    });
+  });
+});
+
+async function loadTodos(list) {
+  const items = await api('/api/todos/' + list);
+  const open = items.filter(t => !t.done);
+  const done = items.filter(t => t.done);
+
+  function row(t) {
+    let due = '';
+    if (t.due_date) {
+      due = '<span class="todo-due' + (t.overdue ? ' overdue' : '') + '">'
+        + (t.overdue ? '⚠ ' : '') + t.due_date + '</span>';
+    }
+    const recur = t.recur_type !== 'none'
+      ? '<span class="todo-recur" title="' + t.recur_type + '">↻</span>' : '';
+    return '<div class="todo-item">'
+      + '<input type="checkbox" class="todo-cb"' + (t.done ? ' checked' : '')
+      + ' onchange="toggleTodoDone(' + t.id + ',\'' + list + '\',' + !t.done + ')">'
+      + '<span class="todo-text' + (t.done ? ' done' : '') + '">' + esc(t.text) + '</span>'
+      + recur + due
+      + '<button class="todo-del" onclick="deleteTodo(' + t.id + ',\'' + list + '\')">✕</button>'
+      + '</div>';
+  }
+
+  document.getElementById(list + '-list').innerHTML =
+    open.length ? open.map(row).join('') : '<div class="todo-empty">No items.</div>';
+  document.getElementById(list + '-done').innerHTML = done.map(row).join('');
+  document.getElementById(list + '-done-count').textContent = done.length;
+}
+
+async function addTodo(list) {
+  const text = document.getElementById(list + '-input').value.trim();
+  if (!text) return;
+  const recur = document.getElementById(list + '-recur').value;
+  const body = { text: text, recur_type: recur };
+  const due = document.getElementById(list + '-due').value;
+  if (due) body.due_date = due;
+  if (recur === 'custom') {
+    body.recur_days = parseInt(document.getElementById(list + '-recur-days').value) || 7;
+  }
+  await api('/api/todos/' + list, { method: 'POST', body: body });
+  document.getElementById(list + '-input').value = '';
+  document.getElementById(list + '-due').value = '';
+  document.getElementById(list + '-recur').value = 'none';
+  document.getElementById(list + '-recur-days').style.display = 'none';
+  await loadTodos(list);
+}
+async function toggleTodoDone(id, list, done) {
+  await api('/api/todos/' + id, { method: 'PATCH', body: { done: done } });
+  await loadTodos(list);
+}
+async function deleteTodo(id, list) {
+  await api('/api/todos/' + id, { method: 'DELETE' });
+  await loadTodos(list);
+}
+function toggleDone(list) {
+  document.getElementById(list + '-done').classList.toggle('open');
+}
+async function clearCompleted(list) {
+  await api('/api/todos/' + list + '/clear_completed', { method: 'POST', body: {} });
+  await loadTodos(list);
+}
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+async function init() {
+  try {
+    await loadWeek();
+    await loadProjects();
+    await loadFriends();
+    await loadTodos('lori');
+    await loadTodos('house');
+  } catch (e) {
+    console.error('init failed:', e);
+  }
+}
+init();
+</script>
+</body>
+</html>

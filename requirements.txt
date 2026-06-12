@@ -1,0 +1,5 @@
+fastapi>=0.130
+uvicorn[standard]>=0.30
+sqlalchemy>=2.0
+apscheduler>=3.10,<4
+python-telegram-bot>=21

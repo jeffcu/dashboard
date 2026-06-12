@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PERSONAL SYSTEMS — DASHBOARD</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #050510;
+  color: #9999AA;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  min-height: 100vh;
+}
+
+/* ── LCARS HEADER ── */
+#lcars-header {
+  background: #FF8800;
+  display: flex;
+  align-items: stretch;
+  height: 52px;
+  margin-bottom: 0;
+}
+#lcars-pill {
+  background: #FF8800;
+  width: 120px;
+  border-radius: 0 0 0 0;
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #1a0800;
+  letter-spacing: 2px;
+  flex-shrink: 0;
+}
+#lcars-divider {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px 0;
+  gap: 3px;
+}
+#lcars-bar1 {
+  background: #FF4400;
+  height: 18px;
+  border-radius: 0 9px 9px 0;
+  margin-right: 140px;
+}
+#lcars-bar2 {
+  background: #882200;
+  height: 18px;
+  border-radius: 0 9px 9px 0;
+  margin-right: 60px;
+}
+#lcars-right {
+  background: #FF8800;
+  width: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 20px;
+  font-size: 11px;
+  color: #1a0800;
+  font-weight: bold;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+/* ── TAB BAR ── */
+#tab-bar {
+  display: flex;
+  background: #07070f;
+  border-bottom: 1px solid #1a1a2e;
+  padding: 0 12px;
+}
+.tab {
+  padding: 8px 16px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #4a3322;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s;
+  user-select: none;
+}
+.tab:hover { color: #886633; }
+.tab.on {
+  color: #FF8800;
+  border-bottom: 2px solid #FF8800;
+  background: #0d0d1a;
+}
+
+/* ── PANELS ── */
+.panel { display: none; padding: 16px; }
+.panel.on { display: block; }
+
+/* ── SECTION HEADER ── */
+.sec-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px;
+  margin-bottom: 10px;
+  border-radius: 2px;
+}
+.sec-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+}
+.sec-hint {
+  font-size: 10px;
+  color: #332211;
+  letter-spacing: 1px;
+}
+
+/* ── BUTTONS ── */
+button {
+  background: #1a0800;
+  border: 0.5px solid #FF8800;
+  color: #FF8800;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 4px 9px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+button:hover { background: #2d1200; }
+
+/* ── DAILY LOG ── */
+#hm-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+#hm-week-label {
+  font-size: 10px;
+  color: #886644;
+  letter-spacing: 1px;
+  flex: 1;
+}
+#hm-grid {
+  display: grid;
+  grid-template-columns: 42px repeat(10, 1fr) 32px;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+.hm-corner { /* empty top-left */ }
+.hm-col-label {
+  font-size: 8px;
+  color: #443322;
+  text-align: center;
+  padding: 2px 0;
+  letter-spacing: 0.5px;
+}
+.hm-row-total {
+  font-size: 9px;
+  color: #664422;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 2px;
+}
+.hm-day-label {
+  font-size: 10px;
+  color: #4a3355;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+}
+.hm-day-label.today { color: #FF9922; }
+.hm-row.today { background: #100e01; }
+.hm-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 1px;
+  min-height: 28px;
+  user-select: none;
+}
+.hm-col-total {
+  font-size: 9px;
+  color: #664422;
+  text-align: center;
+  padding: 2px 0;
+}
+#hm-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.hm-legend-squares {
+  display: flex;
+  gap: 2px;
+}
+.hm-legend-sq {
+  width: 12px;
+  height: 12px;
+  border-radius: 1px;
+}
+.hm-legend-label {
+  font-size: 9px;
+  color: #443322;
+}
+#hm-week-total {
+  font-size: 9px;
+  color: #664422;
+  margin-left: 12px;
+}
+
+/* ── DIARIES ── */
+#proj-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.proj-card {
+  background: #0e0e22;
+  border-left: 2.5px solid #FF8800;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.1s;
+}
+.proj-card:hover { background: #13132a; }
+.proj-card.selected { background: #181832; }
+.proj-cat {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  margin-bottom: 4px;
+}
+.proj-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #FF9922;
+  margin-bottom: 3px;
+}
+.proj-note {
+  font-size: 10px;
+  color: #4a4a60;
+  margin-bottom: 5px;
+}
+.proj-count {
+  font-size: 9px;
+  color: #443344;
+}
+#diary-panel {
+  display: none;
+  background: #07070f;
+  border: 0.5px solid #1a1a2e;
+  border-radius: 2px;
+  padding: 14px;
+}
+#diary-panel.open { display: block; }
+#diary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+#diary-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #FF9922;
+  letter-spacing: 1px;
+}
+#diary-entries {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+.diary-entry {
+  border-bottom: 0.5px solid #0f0f20;
+  padding: 8px 0;
+}
+.diary-ts {
+  font-size: 9px;
+  color: #443322;
+  margin-bottom: 4px;
+}
+.diary-text {
+  font-size: 12px;
+  color: #8888AA;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+.diary-empty {
+  font-size: 11px;
+  color: #333344;
+  padding: 12px 0;
+}
+#diary-new {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#diary-textarea {
+  background: #0a0a1a;
+  border: 0.5px solid #2a2a44;
+  color: #9999AA;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  padding: 8px;
+  resize: vertical;
+  min-height: 72px;
+  border-radius: 2px;
+}
+#diary-textarea:focus { outline: none; border-color: #4a3366; }
+
+/* ── SOCIAL QUEUE ── */
+#social-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 16px;
+}
+#friends-list { }
+.friend-row {
+  background: #0e0e22;
+  border-left: 2.5px solid #CC6600;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.friend-row.phase-scheduled { border-left-color: #1a6633; }
+.friend-row.phase-done { border-left-color: #141428; opacity: 0.35; }
+.friend-info { flex: 1; min-width: 0; }
+.friend-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #FF9922;
+  margin-bottom: 2px;
+}
+.friend-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.friend-type-badge {
+  font-size: 8px;
+  letter-spacing: 1px;
+  border: 0.5px solid #FF8800;
+  color: #FF8800;
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.friend-type-badge.local { border-color: #33DDAA; color: #33DDAA; }
+.friend-phase {
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+.friend-phase.to-schedule { color: #CC6600; }
+.friend-phase.scheduled { color: #22AA44; }
+.friend-phase.done { color: #444455; }
+.friend-note {
+  font-size: 9px;
+  color: #554433;
+  margin-top: 2px;
+}
+.friend-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  align-items: center;
+}
+.btn-toggle-type {
+  font-size: 8px;
+  padding: 3px 6px;
+  border-color: #334455;
+  color: #556677;
+}
+.btn-toggle-type:hover { border-color: #556677; color: #7799AA; }
+
+#add-friend-form {
+  background: #07070f;
+  border: 0.5px solid #1a1a2e;
+  border-radius: 2px;
+  padding: 12px;
+  align-self: start;
+}
+#add-friend-form h3 {
+  font-size: 10px;
+  color: #33DDAA;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+.form-row {
+  margin-bottom: 8px;
+}
+.form-label {
+  font-size: 9px;
+  color: #443322;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 3px;
+}
+.form-input {
+  width: 100%;
+  background: #0a0a1a;
+  border: 0.5px solid #2a2a44;
+  color: #9999AA;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  padding: 5px 7px;
+  border-radius: 2px;
+}
+.form-input:focus { outline: none; border-color: #4a3366; }
+.radio-row {
+  display: flex;
+  gap: 14px;
+}
+.radio-row label {
+  font-size: 10px;
+  color: #7777AA;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── TODOS ── */
+#todo-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.todo-col {
+  background: #07070f;
+  border: 0.5px solid #1a1a2e;
+  border-radius: 2px;
+  padding: 12px;
+}
+.todo-col-title {
+  font-size: 11px;
+  color: #88CC44;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+.todo-add-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.todo-add-input {
+  flex: 1;
+  background: #0a0a1a;
+  border: 0.5px solid #2a2a44;
+  color: #9999AA;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  padding: 5px 7px;
+  border-radius: 2px;
+}
+.todo-add-input:focus { outline: none; border-color: #4a3366; }
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 0.5px solid #0d0d1e;
+}
+.todo-item:last-child { border-bottom: none; }
+.todo-cb { cursor: pointer; accent-color: #88CC44; }
+.todo-text {
+  flex: 1;
+  font-size: 12px;
+  color: #8888AA;
+  line-height: 1.4;
+}
+.todo-text.done {
+  color: #2a2a3a;
+  text-decoration: line-through;
+}
+.todo-del {
+  font-size: 10px;
+  color: #2a2a3a;
+  cursor: pointer;
+  padding: 0 4px;
+  background: none;
+  border: none;
+  transition: color 0.15s;
+}
+.todo-del:hover { color: #AA4422; background: none; }
+.todo-empty {
+  font-size: 10px;
+  color: #2a2a3a;
+  padding: 6px 0;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #07070f; }
+::-webkit-scrollbar-thumb { background: #2a1a00; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- LCARS HEADER -->
+<div id="lcars-header">
+  <div id="lcars-pill">LCARS</div>
+  <div id="lcars-divider">
+    <div id="lcars-bar1"></div>
+    <div id="lcars-bar2"></div>
+  </div>
+  <div id="lcars-right">
+    PERSONAL SYSTEMS &nbsp;|&nbsp; <span id="stardate">STARDATE ---</span>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div id="tab-bar">
+  <div class="tab on" onclick="switchTab('daily')">DAILY LOG</div>
+  <div class="tab" onclick="switchTab('diaries')">DIARIES</div>
+  <div class="tab" onclick="switchTab('social')">SOCIAL QUEUE</div>
+  <div class="tab" onclick="switchTab('todos')">LORI + HOUSEKEEPING</div>
+</div>
+
+<!-- ═══════════════════════════════════════ DAILY LOG ═══ -->
+<div id="panel-daily" class="panel on">
+  <div class="sec-hdr" style="background:#0d0800;">
+    <span class="sec-label" style="color:#FF8800;">DAILY LOG</span>
+    <span class="sec-hint">LEFT CLICK +1H · RIGHT CLICK -1H</span>
+  </div>
+  <div id="hm-nav">
+    <button onclick="hmPrev()">◀ PREV</button>
+    <button onclick="hmToday()">TODAY</button>
+    <button onclick="hmNext()">NEXT ▶</button>
+    <span id="hm-week-label"></span>
+  </div>
+  <div id="hm-grid"></div>
+  <div id="hm-legend"></div>
+</div>
+
+<!-- ═══════════════════════════════════════ DIARIES ═══ -->
+<div id="panel-diaries" class="panel">
+  <div class="sec-hdr" style="background:#080816;">
+    <span class="sec-label" style="color:#8899FF;">PROJECT DIARIES</span>
+    <span class="sec-hint">CLICK CARD TO OPEN JOURNAL</span>
+  </div>
+  <div id="proj-grid"></div>
+  <div id="diary-panel">
+    <div id="diary-header">
+      <span id="diary-title"></span>
+      <button onclick="closeDiary()">CLOSE ✕</button>
+    </div>
+    <div id="diary-entries"></div>
+    <div id="diary-new">
+      <textarea id="diary-textarea" placeholder="New entry…"></textarea>
+      <button onclick="saveDiaryEntry()" style="align-self:flex-start;">SAVE ENTRY</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ SOCIAL QUEUE ═══ -->
+<div id="panel-social" class="panel">
+  <div class="sec-hdr" style="background:#06100e;">
+    <span class="sec-label" style="color:#33DDAA;">SOCIAL QUEUE</span>
+    <span class="sec-hint">MAINTAIN CONTACT CYCLE</span>
+  </div>
+  <div id="social-layout">
+    <div id="friends-list"></div>
+    <div id="add-friend-form">
+      <h3>ADD CONTACT</h3>
+      <div class="form-row">
+        <label class="form-label">NAME</label>
+        <input type="text" id="new-friend-name" class="form-input" placeholder="Name">
+      </div>
+      <div class="form-row">
+        <label class="form-label">TYPE</label>
+        <div class="radio-row">
+          <label><input type="radio" name="new-friend-type" value="PHONE" checked> PHONE</label>
+          <label><input type="radio" name="new-friend-type" value="LOCAL"> LOCAL</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">NOTE (OPTIONAL)</label>
+        <input type="text" id="new-friend-note" class="form-input" placeholder="e.g. Lunch next week">
+      </div>
+      <button onclick="addFriend()">ADD CONTACT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ TODOS ═══ -->
+<div id="panel-todos" class="panel">
+  <div class="sec-hdr" style="background:#060e04;">
+    <span class="sec-label" style="color:#88CC44;">LORI + HOUSEKEEPING</span>
+    <span class="sec-hint">HOUSEHOLD TASK MANAGEMENT</span>
+  </div>
+  <div id="todo-layout">
+    <div class="todo-col">
+      <div class="todo-col-title">LORI TO-DOS</div>
+      <div class="todo-add-row">
+        <input type="text" id="lori-input" class="todo-add-input" placeholder="New item…" onkeydown="todoKey(event,'lori')">
+        <button onclick="addTodo('lori')">ADD</button>
+      </div>
+      <div id="lori-list"></div>
+    </div>
+    <div class="todo-col">
+      <div class="todo-col-title">HOUSEKEEPING</div>
+      <div class="todo-add-row">
+        <input type="text" id="house-input" class="todo-add-input" placeholder="New item…" onkeydown="todoKey(event,'house')">
+        <button onclick="addTodo('house')">ADD</button>
+      </div>
+      <div id="house-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════════════════════
+var DOMAINS = ['TECH','ROBOT','ART','MTB','SOCIAL','CIVIC','FIN','RSS','LORI','HOUSE'];
+var DAYS    = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+var HM_COLORS = [
+  '#09091c','#1e1004','#301800','#4d2800','#7a4100',
+  '#AA5E00','#CC7200','#EE8500','#FF9922'
+];
+var PROJECTS = [
+  { id: 'nocturne',  name: 'Nocturne',      cat: 'ART',     col: '#FF8800', note: 'Oil · en plein air' },
+  { id: 'sculpture', name: 'Sculpture',     cat: 'ART',     col: '#FF8800', note: 'Plasticene · David ref' },
+  { id: 'trust',     name: 'Trust',         cat: 'TECH',    col: '#22AA44', note: 'Running' },
+  { id: 'intel',     name: 'Intelligence',  cat: 'TECH',    col: '#22AA44', note: 'RSS pipeline' },
+  { id: 'dnd',       name: 'D&amp;D Server',cat: 'TECH',    col: '#22AA44', note: 'Local · Portainer' },
+  { id: 'robot',     name: 'Robot',         cat: 'TECH',    col: '#4488FF', note: 'Code lab · starting' },
+  { id: 'ocparks',   name: 'OC Parks',      cat: 'CIVIC',   col: '#DDAA00', note: 'E-bike campaign' },
+  { id: 'finance',   name: 'Planning',      cat: 'FINANCE', col: '#AA6600', note: 'Roth + Scholarship' }
+];
+var DEFAULT_FRIENDS = [
+  { name: 'Mitch',    type: 'LOCAL', phase: 'SCHEDULED',   note: 'Lunch this week · Jun 14' },
+  { name: 'Greg',     type: 'PHONE', phase: 'TO_SCHEDULE',  note: '' },
+  { name: 'Alan',     type: 'PHONE', phase: 'TO_SCHEDULE',  note: 'Call next Tuesday Jun 17' },
+  { name: 'Steve',    type: 'PHONE', phase: 'TO_SCHEDULE',  note: '' },
+  { name: 'Michael',  type: 'PHONE', phase: 'TO_SCHEDULE',  note: '' },
+  { name: 'Andy',     type: 'LOCAL', phase: 'TO_SCHEDULE',  note: '' },
+  { name: 'Thad',     type: 'PHONE', phase: 'TO_SCHEDULE',  note: '' },
+  { name: 'Flagg',    type: 'PHONE', phase: 'TO_SCHEDULE',  note: '' },
+  { name: 'Placido',  type: 'PHONE', phase: 'TO_SCHEDULE',  note: '' },
+  { name: 'Dave',     type: 'LOCAL', phase: 'TO_SCHEDULE',  note: '' },
+  { name: 'Ron',      type: 'PHONE', phase: 'TO_SCHEDULE',  note: '' },
+  { name: 'Sheldone', type: 'PHONE', phase: 'TO_SCHEDULE',  note: '' }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// STORAGE HELPERS
+// ═══════════════════════════════════════════════════════════════
+function lsGet(key, def) {
+  try {
+    var v = localStorage.getItem(key);
+    return v !== null ? JSON.parse(v) : def;
+  } catch(e) { return def; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HTML ESCAPE
+// ═══════════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TAB NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function switchTab(name) {
+  var tabs = document.querySelectorAll('.tab');
+  var panels = document.querySelectorAll('.panel');
+  var map = { daily: 0, diaries: 1, social: 2, todos: 3 };
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.remove('on');
+    panels[i].classList.remove('on');
+  }
+  tabs[map[name]].classList.add('on');
+  panels[map[name]].classList.add('on');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STARDATE
+// ═══════════════════════════════════════════════════════════════
+function updateStardate() {
+  var d = new Date();
+  var yr = d.getFullYear();
+  var start = new Date(yr, 0, 0);
+  var diff = d - start;
+  var oneDay = 86400000;
+  var doy = Math.floor(diff / oneDay);
+  var sd = (yr - 1900) + '.' + String(doy).padStart(3, '0');
+  document.getElementById('stardate').textContent = 'STARDATE ' + sd;
+}
+updateStardate();
+setInterval(updateStardate, 60000);
+
+// ═══════════════════════════════════════════════════════════════
+// MODULE 1 — DAILY LOG
+// ═══════════════════════════════════════════════════════════════
+var hmOffset = 0;
+
+function isoWeek(offset) {
+  var d = new Date();
+  d.setDate(d.getDate() + (offset || 0) * 7);
+  var y = d.getFullYear();
+  var jan1 = new Date(y, 0, 1);
+  var wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return y + '-W' + String(wk).padStart(2, '0');
+}
+
+function todayDayIndex() {
+  var day = new Date().getDay(); // 0=Sun
+  // Convert to MON=0 … SUN=6
+  return (day + 6) % 7;
+}
+
+function getHmData() {
+  return lsGet('hm_' + isoWeek(hmOffset), {});
+}
+function setHmData(data) {
+  lsSet('hm_' + isoWeek(hmOffset), data);
+}
+
+function hmCellKey(dayIdx, domIdx) {
+  return DAYS[dayIdx] + '_' + DOMAINS[domIdx];
+}
+
+function hmCellVal(data, dayIdx, domIdx) {
+  return data[hmCellKey(dayIdx, domIdx)] || 0;
+}
+
+function hmClick(dayIdx, domIdx) {
+  var data = getHmData();
+  var key = hmCellKey(dayIdx, domIdx);
+  var v = (data[key] || 0) + 1;
+  if (v > 8) v = 8;
+  if (v === 0) delete data[key]; else data[key] = v;
+  setHmData(data);
+  renderHeatmap();
+}
+
+function hmRightClick(evt, dayIdx, domIdx) {
+  evt.preventDefault();
+  var data = getHmData();
+  var key = hmCellKey(dayIdx, domIdx);
+  var v = (data[key] || 0) - 1;
+  if (v <= 0) delete data[key]; else data[key] = v;
+  setHmData(data);
+  renderHeatmap();
+}
+
+function hmPrev()  { hmOffset--; renderHeatmap(); }
+function hmNext()  { hmOffset++; renderHeatmap(); }
+function hmToday() { hmOffset = 0; renderHeatmap(); }
+
+function renderHeatmap() {
+  var data = getHmData();
+  var weekKey = isoWeek(hmOffset);
+  var todayIdx = hmOffset === 0 ? todayDayIndex() : -1;
+
+  // Week label
+  document.getElementById('hm-week-label').textContent =
+    weekKey + (hmOffset === 0 ? '  (current)' : '');
+
+  var grid = document.getElementById('hm-grid');
+  var html = '';
+
+  // Top-left corner
+  html += '<div class="hm-corner"></div>';
+
+  // Column labels
+  for (var d = 0; d < DOMAINS.length; d++) {
+    html += '<div class="hm-col-label">' + esc(DOMAINS[d]) + '</div>';
+  }
+  html += '<div></div>'; // spacer for totals column header
+
+  // Rows
+  for (var r = 0; r < DAYS.length; r++) {
+    var isToday = (r === todayIdx);
+    var rowSum = 0;
+    for (var c = 0; c < DOMAINS.length; c++) {
+      rowSum += hmCellVal(data, r, c);
+    }
+
+    // Day label
+    html += '<div class="hm-day-label' + (isToday ? ' today' : '') + '">' + esc(DAYS[r]) + '</div>';
+
+    // Cells
+    for (var c = 0; c < DOMAINS.length; c++) {
+      var v = hmCellVal(data, r, c);
+      var bg = HM_COLORS[v];
+      var txtColor = v >= 5 ? '#1a0800' : '#553311';
+      var label = v > 0 ? v : '';
+      html += '<div class="hm-cell"'
+        + ' style="background:' + bg + ';color:' + txtColor + ';'
+        + (isToday ? 'outline:1px solid #2a1800;' : '') + '"'
+        + ' onclick="hmClick(' + r + ',' + c + ')"'
+        + ' oncontextmenu="hmRightClick(event,' + r + ',' + c + ')">'
+        + label + '</div>';
+    }
+
+    // Row total
+    html += '<div class="hm-row-total">' + (rowSum > 0 ? rowSum + 'h' : '&mdash;') + '</div>';
+  }
+
+  // Column totals row
+  html += '<div></div>'; // day-label spacer
+  for (var c = 0; c < DOMAINS.length; c++) {
+    var colSum = 0;
+    for (var r = 0; r < DAYS.length; r++) colSum += hmCellVal(data, r, c);
+    html += '<div class="hm-col-total">' + (colSum > 0 ? colSum : '&mdash;') + '</div>';
+  }
+  html += '<div></div>';
+
+  grid.innerHTML = html;
+
+  // Legend
+  var weekTotal = 0;
+  for (var r = 0; r < DAYS.length; r++)
+    for (var c = 0; c < DOMAINS.length; c++)
+      weekTotal += hmCellVal(data, r, c);
+
+  var lhtml = '<span class="hm-legend-label">0</span>';
+  lhtml += '<div class="hm-legend-squares">';
+  for (var i = 0; i < HM_COLORS.length; i++) {
+    lhtml += '<div class="hm-legend-sq" style="background:' + HM_COLORS[i] + '"></div>';
+  }
+  lhtml += '</div>';
+  lhtml += '<span class="hm-legend-label">8 hrs</span>';
+  lhtml += '<span id="hm-week-total">' + weekTotal + 'h total this week</span>';
+  document.getElementById('hm-legend').innerHTML = lhtml;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODULE 2 — PROJECT DIARIES
+// ═══════════════════════════════════════════════════════════════
+var activeDiaryId = null;
+
+function getDiaryEntries(id) {
+  return lsGet('diary_' + id, []);
+}
+function setDiaryEntries(id, arr) {
+  lsSet('diary_' + id, arr);
+}
+
+function renderProjGrid() {
+  var html = '';
+  for (var i = 0; i < PROJECTS.length; i++) {
+    var p = PROJECTS[i];
+    var entries = getDiaryEntries(p.id);
+    var cnt = entries.length;
+    var cntLabel = cnt === 0 ? 'no entries' : cnt + (cnt === 1 ? ' entry' : ' entries');
+    var sel = (activeDiaryId === p.id) ? ' selected' : '';
+    // Note: p.name may contain &amp; from config, output raw since we set it ourselves
+    html += '<div class="proj-card' + sel + '" onclick="openDiary(\'' + p.id + '\')"'
+      + ' style="border-left-color:' + p.col + '">'
+      + '<div class="proj-cat" style="color:' + p.col + '">' + esc(p.cat) + '</div>'
+      + '<div class="proj-name">' + p.name + '</div>'
+      + '<div class="proj-note">' + esc(p.note) + '</div>'
+      + '<div class="proj-count">' + cntLabel + '</div>'
+      + '</div>';
+  }
+  document.getElementById('proj-grid').innerHTML = html;
+}
+
+function openDiary(id) {
+  activeDiaryId = id;
+  renderProjGrid();
+  var panel = document.getElementById('diary-panel');
+  panel.classList.add('open');
+  var p = null;
+  for (var i = 0; i < PROJECTS.length; i++) {
+    if (PROJECTS[i].id === id) { p = PROJECTS[i]; break; }
+  }
+  document.getElementById('diary-title').textContent = p ? p.name.replace('&amp;','&') : id;
+  renderDiaryEntries(id);
+  document.getElementById('diary-textarea').value = '';
+}
+
+function closeDiary() {
+  activeDiaryId = null;
+  document.getElementById('diary-panel').classList.remove('open');
+  renderProjGrid();
+}
+
+function renderDiaryEntries(id) {
+  var entries = getDiaryEntries(id);
+  var el = document.getElementById('diary-entries');
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="diary-empty">No entries yet.</div>';
+    return;
+  }
+  // Newest first
+  var rev = entries.slice().reverse();
+  var html = '';
+  for (var i = 0; i < rev.length; i++) {
+    html += '<div class="diary-entry">'
+      + '<div class="diary-ts">' + esc(rev[i].date) + '</div>'
+      + '<div class="diary-text">' + esc(rev[i].text) + '</div>'
+      + '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function saveDiaryEntry() {
+  var ta = document.getElementById('diary-textarea');
+  var text = ta.value.trim();
+  if (!text || !activeDiaryId) return;
+  var now = new Date();
+  var dateStr = now.toLocaleString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric',
+    year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+  var entries = getDiaryEntries(activeDiaryId);
+  entries.push({ date: dateStr, text: text });
+  setDiaryEntries(activeDiaryId, entries);
+  ta.value = '';
+  renderDiaryEntries(activeDiaryId);
+  renderProjGrid();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODULE 3 — SOCIAL QUEUE
+// ═══════════════════════════════════════════════════════════════
+function getFriends() {
+  var stored = lsGet('friends', null);
+  if (stored === null) {
+    lsSet('friends', DEFAULT_FRIENDS);
+    return DEFAULT_FRIENDS.slice();
+  }
+  return stored;
+}
+function setFriends(arr) {
+  lsSet('friends', arr);
+}
+
+function renderFriends() {
+  var friends = getFriends();
+  var html = '';
+  for (var i = 0; i < friends.length; i++) {
+    var f = friends[i];
+    var rowClass = 'friend-row';
+    if (f.phase === 'SCHEDULED') rowClass += ' phase-scheduled';
+    if (f.phase === 'DONE') rowClass += ' phase-done';
+    var badgeClass = f.type === 'LOCAL' ? 'friend-type-badge local' : 'friend-type-badge';
+    var phaseClass = f.phase === 'TO_SCHEDULE' ? 'to-schedule'
+                   : f.phase === 'SCHEDULED' ? 'scheduled' : 'done';
+    var phaseLabel = f.phase === 'TO_SCHEDULE' ? 'TO SCHEDULE'
+                   : f.phase === 'SCHEDULED' ? 'SCHEDULED' : 'DONE';
+
+    var actionBtn = '';
+    if (f.phase === 'TO_SCHEDULE') {
+      var label = f.type === 'LOCAL' ? 'CALL+LUNCH' : 'CALL';
+      actionBtn = '<button onclick="advanceFriend(' + i + ')">' + label + '</button>';
+    } else if (f.phase === 'SCHEDULED') {
+      actionBtn = '<button onclick="advanceFriend(' + i + ')">DONE ✓</button>';
+    } else {
+      actionBtn = '<button onclick="resetFriend(' + i + ')" style="border-color:#334455;color:#556677;">RESET</button>';
+    }
+
+    html += '<div class="' + rowClass + '">'
+      + '<div class="friend-info">'
+      + '<div class="friend-name">' + esc(f.name) + '</div>'
+      + '<div class="friend-meta">'
+      + '<span class="' + badgeClass + '">' + esc(f.type) + '</span>'
+      + '<span class="friend-phase ' + phaseClass + '">' + phaseLabel + '</span>'
+      + '</div>'
+      + (f.note ? '<div class="friend-note">' + esc(f.note) + '</div>' : '')
+      + '</div>'
+      + '<div class="friend-actions">'
+      + '<button class="btn-toggle-type" onclick="toggleFriendType(' + i + ')">'
+      + (f.type === 'LOCAL' ? '→PHONE' : '→LOCAL') + '</button>'
+      + actionBtn
+      + '</div>'
+      + '</div>';
+  }
+  document.getElementById('friends-list').innerHTML = html;
+}
+
+function advanceFriend(i) {
+  var friends = getFriends();
+  if (friends[i].phase === 'TO_SCHEDULE') friends[i].phase = 'SCHEDULED';
+  else if (friends[i].phase === 'SCHEDULED') friends[i].phase = 'DONE';
+  setFriends(friends);
+  renderFriends();
+}
+
+function resetFriend(i) {
+  var friends = getFriends();
+  friends[i].phase = 'TO_SCHEDULE';
+  setFriends(friends);
+  renderFriends();
+}
+
+function toggleFriendType(i) {
+  var friends = getFriends();
+  friends[i].type = friends[i].type === 'LOCAL' ? 'PHONE' : 'LOCAL';
+  setFriends(friends);
+  renderFriends();
+}
+
+function addFriend() {
+  var nameEl = document.getElementById('new-friend-name');
+  var noteEl = document.getElementById('new-friend-note');
+  var name = nameEl.value.trim();
+  if (!name) return;
+  var typeEl = document.querySelector('input[name="new-friend-type"]:checked');
+  var type = typeEl ? typeEl.value : 'PHONE';
+  var note = noteEl.value.trim();
+  var friends = getFriends();
+  friends.push({ name: name, type: type, phase: 'TO_SCHEDULE', note: note });
+  setFriends(friends);
+  nameEl.value = '';
+  noteEl.value = '';
+  renderFriends();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODULE 4 — TODOS
+// ═══════════════════════════════════════════════════════════════
+function getTodos(section) {
+  return lsGet('todos_' + section, []);
+}
+function setTodos(section, arr) {
+  lsSet('todos_' + section, arr);
+}
+
+function renderTodos(section) {
+  var items = getTodos(section);
+  var el = document.getElementById(section + '-list');
+  if (items.length === 0) {
+    el.innerHTML = '<div class="todo-empty">No items.</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    var doneClass = it.done ? ' done' : '';
+    html += '<div class="todo-item">'
+      + '<input type="checkbox" class="todo-cb"'
+      + (it.done ? ' checked' : '')
+      + ' onchange="toggleTodo(\'' + section + '\',' + i + ')">'
+      + '<span class="todo-text' + doneClass + '">' + esc(it.text) + '</span>'
+      + '<button class="todo-del" onclick="deleteTodo(\'' + section + '\',' + i + ')">✕</button>'
+      + '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function addTodo(section) {
+  var input = document.getElementById(section + '-input');
+  var text = input.value.trim();
+  if (!text) return;
+  var items = getTodos(section);
+  items.push({ text: text, done: false });
+  setTodos(section, items);
+  input.value = '';
+  renderTodos(section);
+}
+
+function todoKey(evt, section) {
+  if (evt.key === 'Enter') addTodo(section);
+}
+
+function toggleTodo(section, i) {
+  var items = getTodos(section);
+  items[i].done = !items[i].done;
+  setTodos(section, items);
+  renderTodos(section);
+}
+
+function deleteTodo(section, i) {
+  var items = getTodos(section);
+  items.splice(i, 1);
+  setTodos(section, items);
+  renderTodos(section);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+renderHeatmap();
+renderProjGrid();
+renderFriends();
+renderTodos('lori');
+renderTodos('house');
+</script>
+</body>
+</html>

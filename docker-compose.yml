@@ -1,0 +1,12 @@
+services:
+  dashboard:
+    build: .
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./data:/data            # SQLite database persists here
+      - ./app/static:/app/app/static   # Web UI editable without rebuild
+    env_file: .env
+    environment:
+      - DB_PATH=/data/dashboard.db
+    restart: unless-stopped
