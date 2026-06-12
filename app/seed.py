@@ -24,16 +24,16 @@ DEFAULT_FRIENDS = [
     ("Sheldone", "PHONE", "TO_SCHEDULE", ""),
 ]
 
-# (key, name, domain_key, accent_color, note)
+# (key, name, domain_key, accent_color, note) — colors match Workshop UI palette
 DEFAULT_PROJECTS = [
-    ("nocturne", "Nocturne", "ART", "#FF8800", "Oil · en plein air"),
-    ("sculpture", "Sculpture", "ART", "#FF8800", "Plasticene · David ref"),
-    ("trust", "Trust", "TECH", "#22AA44", "Running"),
-    ("intel", "Intelligence", "TECH", "#22AA44", "RSS pipeline"),
-    ("dnd", "D&D Server", "TECH", "#22AA44", "Local · Portainer"),
-    ("robot", "Robot", "ROBOT", "#4488FF", "Code lab · starting"),
-    ("ocparks", "OC Parks", "CIVIC", "#DDAA00", "E-bike campaign"),
-    ("finance", "Planning", "FIN", "#AA6600", "Roth + Scholarship"),
+    ("nocturne", "Nocturne", "ART", "#C44A18", "Oil · en plein air"),
+    ("sculpture", "Sculpture", "ART", "#C44A18", "Plasticene · David ref"),
+    ("trust", "Trust", "TECH", "#1E6E62", "Running"),
+    ("intel", "Intelligence", "TECH", "#1E6E62", "RSS pipeline"),
+    ("dnd", "D&D Server", "TECH", "#1E6E62", "Local · Portainer"),
+    ("robot", "Robot", "ROBOT", "#3A6EA5", "Code lab · starting"),
+    ("ocparks", "OC Parks", "CIVIC", "#B07D10", "E-bike campaign"),
+    ("finance", "Planning", "FIN", "#8A5A2B", "Roth + Scholarship"),
 ]
 
 

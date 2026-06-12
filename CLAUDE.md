@@ -6,7 +6,7 @@
 
 ## What This Project Is
 
-A personal life-balance and social-maintenance system for Jeff Curie. It tracks daily time investment across shifting life domains (art, tech, biking, civic work, finance, etc.), maintains a social contact queue with history and cadence, manages household todos, and delivers a daily morning briefing via Telegram. Three clients: web dashboard (LCARS aesthetic), Telegram bot (mobile quick-actions), and macOS menu bar (xbar glanceable status).
+A personal life-balance and social-maintenance system for Jeff Curie. It tracks daily time investment across shifting life domains (art, tech, biking, civic work, finance, etc.), maintains a social contact queue with history and cadence, manages household todos, and delivers a daily morning briefing via Telegram. Three clients: web dashboard ("Workshop" aesthetic — warm paper, ink, burnt orange/teal), Telegram bot (mobile quick-actions), and macOS menu bar (xbar glanceable status).
 
 ---
 
@@ -156,6 +156,7 @@ PORT=8765
 | Bot `/log` semantics | Additive (adds hours to existing, clamps at 8) | Quick-logging from phone means "I just did 2 more hours", not "set total to 2". Web UI clicks set absolute values. |
 | Domain reorder UI | ▲▼ buttons, not drag-and-drop | Spec said drag-and-drop; buttons are 10x simpler, same outcome, no library. Revisit only if it annoys in practice. |
 | Bot/scheduler startup | Inside FastAPI lifespan, token-optional | Single process, single container. Missing token → bot DORMANT, everything else runs. Token can be added any time via .env + restart. |
+| UI aesthetic | "Workshop" light theme (2026-06-12) — NOT LCARS | Jeff's call: no Star Trek. Warm paper #F7F2EA, ink #221C14, burnt orange #C44A18, deep teal #1E6E62, olive #5C7C2F for todos. System font stack, 14px body, high contrast. Heatmap ramps paper→deep orange; cell text white at ≥4h. CSS vars in `:root` of dashboard.html — restyle there, never in JS logic. |
 
 ---
 
@@ -282,6 +283,7 @@ PORT=8765
 
 ## What's Next
 
+0. Jeff: `rm -f .git/HEAD.lock .git/index.lock` (stale locks from sandbox commit — see Debugging History)
 1. Jeff: `cp .env.example .env` (dummy token values are fine for now) then `docker compose up -d --build`
 2. Confirm `curl localhost:8765/api/summary` and open http://localhost:8765 — click through all four tabs
 3. Jeff provides real TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USER_ID → restart container → test `/log art 2` and `/brief`
@@ -317,10 +319,20 @@ PORT=8765
 |---|---|---|---|
 | 2026-06-12 | xbar plugin: Python block wrapped in bash single quotes | `syntax error near unexpected token '('` at line 51 | Python f-strings containing single quotes terminated the bash quote. Fix: feed Python via `<<'PYEOF'` heredoc + JSON via env var — never inline-quote Python in shell scripts |
 | 2026-06-12 | Testing server with background `&` across separate sandbox shell calls | curl returned HTTP 000; process dead | Claude's sandbox reaps background processes between bash calls. Server + all curls must run in ONE shell invocation when testing there. Not a project bug |
+| 2026-06-12 | git commit from sandbox into Dropbox-mounted folder | Commit da48cf4 succeeded, but stale `.git/HEAD.lock` + `.git/index.lock` left behind — sandbox cannot unlink in the mount | Run `rm -f .git/HEAD.lock .git/index.lock` on the Mac before next git operation. Future git work in this repo is best done on the host |
 
 ---
 
 ## Session Log
+
+### 2026-06-12 (restyle session)
+**Phase:** Post-build polish — UI restyle  
+**Attempted:** Replace LCARS aesthetic entirely per Jeff's direction: "masculine creative optimist, easy to read, good contrast"  
+**Succeeded:** Full re-skin of app/static/dashboard.html as "Workshop" light theme (Jeff chose warm-light over dark-slate when asked). CSS rewritten with `:root` variables; header now wordmark + tagline + date (stardate removed); heatmap color ramp redone for light bg with white text ≥4h; seed.py project accent colors updated to match palette. All JS logic, element IDs, and API wiring untouched. Verified: serves at /, zero LCARS/stardate references, JS parses clean (node vm), API endpoints intact.  
+**Failed:** Nothing  
+**New constraints discovered:** None  
+**Plan changes:** None — cosmetic only  
+**Awaiting user:** Same as build session, plus browser look-over of the new theme
 
 ### 2026-06-12 (build session)
 **Phase:** Phases 1–7 — full system build  
