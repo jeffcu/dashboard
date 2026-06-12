@@ -17,10 +17,23 @@ logger = logging.getLogger("dashboard")
 STATIC_DIR = Path(__file__).parent / "static"
 
 
+def _migrate() -> None:
+    """Lightweight in-place migrations for existing databases."""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(todos)"))]
+        if cols and "sort_order" not in cols:
+            conn.execute(text("ALTER TABLE todos ADD COLUMN sort_order INTEGER DEFAULT 0"))
+            conn.execute(text("UPDATE todos SET sort_order = id"))
+            conn.commit()
+            logger.info("Migrated: todos.sort_order added")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # tables + seed
+    # tables + migrations + seed
     Base.metadata.create_all(bind=engine)
+    _migrate()
     db = SessionLocal()
     try:
         seed(db)

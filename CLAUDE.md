@@ -157,6 +157,11 @@ PORT=8765
 | Domain reorder UI | ▲▼ buttons, not drag-and-drop | Spec said drag-and-drop; buttons are 10x simpler, same outcome, no library. Revisit only if it annoys in practice. |
 | Bot/scheduler startup | Inside FastAPI lifespan, token-optional | Single process, single container. Missing token → bot DORMANT, everything else runs. Token can be added any time via .env + restart. |
 | UI aesthetic | "Workshop" light theme (2026-06-12) — NOT LCARS | Jeff's call: no Star Trek. Warm paper #F7F2EA, ink #221C14, burnt orange #C44A18, deep teal #1E6E62, olive #5C7C2F for todos. System font stack, 14px body, high contrast. Heatmap ramps paper→deep orange; cell text white at ≥4h. CSS vars in `:root` of dashboard.html — restyle there, never in JS logic. |
+| Landing page | TODAY tab — agenda-first launchpad (2026-06-12) | Jeff: "great entry dashboard to launch my day… priorities and projects getting behind." Focus card + ordered agenda + 3 cards (priorities / getting behind / social steps). Agenda priority order: overdue social → slipping priorities → due today → scheduled → goals behind → stale projects (14d quiet) → dormant domains. Engine lives in briefing.py `build_brief_data` — ONE source for web TODAY, Telegram brief, and focus. |
+| Housekeeping list | Retired from UI/brief/bot (2026-06-12) | Jeff's call. API stays list-generic and house rows remain in DB (soft policy: never destroy history). HOUSE *domain* (heatmap) unaffected — archive via Domain Settings if ever unwanted. |
+| Lori's Priorities | Manually ranked list (sort_order), ▲▼ reorder | It's a priority queue, not a todo list — manual order beats due-date sort. #1 = next move. Bot: `/add <text>`, `/check <n>` (lori implied). |
+| Social Queue framing | CRM — every contact carries a computed `next_action` | Jeff: "informs me what steps are due to keep on my plan." next_action(phase, due, type) rendered on friend rows, TODAY page, and brief. Logic in routers/social.py. |
+| Schema migrations | Inline `_migrate()` in main.py lifespan (PRAGMA check → ALTER) | Zero-ops, idempotent, runs before seed. First use: todos.sort_order. |
 
 ---
 
@@ -283,10 +288,10 @@ PORT=8765
 
 ## What's Next
 
-0. Jeff: `rm -f .git/HEAD.lock .git/index.lock` (stale locks from sandbox commit — see Debugging History)
-1. Jeff: `cp .env.example .env` (dummy token values are fine for now) then `docker compose up -d --build`
-2. Confirm `curl localhost:8765/api/summary` and open http://localhost:8765 — click through all four tabs
-3. Jeff provides real TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USER_ID → restart container → test `/log art 2` and `/brief`
+0. Jeff, on the Mac: `rm -f .git/index.lock && git add -A && git commit -m "TODAY launchpad + Lori's Priorities + Social CRM + Workshop restyle"` (sandbox git leaves immortal locks — ALL git ops happen on the host, never the sandbox)
+1. Jeff: `docker compose up -d --build` — REBUILD REQUIRED (backend changed: today endpoint, migration, agenda engine). Migration adds todos.sort_order automatically on startup.
+2. Open http://localhost:8765 — lands on TODAY. Check agenda, then click through all five tabs.
+3. Jeff provides real TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USER_ID → restart container → test `/log coding 2` and `/brief`
 4. Install xbar plugin: `cp xbar/dashboard.1m.sh ~/.config/xbar/plugins/ && chmod +x ~/.config/xbar/plugins/dashboard.1m.sh`
 5. Confirm 7:30am briefing arrives next morning
 
@@ -320,10 +325,28 @@ PORT=8765
 | 2026-06-12 | xbar plugin: Python block wrapped in bash single quotes | `syntax error near unexpected token '('` at line 51 | Python f-strings containing single quotes terminated the bash quote. Fix: feed Python via `<<'PYEOF'` heredoc + JSON via env var — never inline-quote Python in shell scripts |
 | 2026-06-12 | Testing server with background `&` across separate sandbox shell calls | curl returned HTTP 000; process dead | Claude's sandbox reaps background processes between bash calls. Server + all curls must run in ONE shell invocation when testing there. Not a project bug |
 | 2026-06-12 | git commit from sandbox into Dropbox-mounted folder | Commit da48cf4 succeeded, but stale `.git/HEAD.lock` + `.git/index.lock` left behind — sandbox cannot unlink in the mount | Run `rm -f .git/HEAD.lock .git/index.lock` on the Mac before next git operation. Future git work in this repo is best done on the host |
+| 2026-06-12 | Second sandbox commit attempt (restyle) after Jeff cleared locks | `git add` succeeded but left a fresh immortal `index.lock`; commit blocked | **RULE: never run git write operations from the sandbox in this repo.** Stage/commit on the Mac only. Restyle changes left staged for Jeff to commit |
+| 2026-06-12 | UPDATE on live data/dashboard.db from sandbox | `sqlite3.OperationalError: disk I/O error` | Mount can't delete SQLite's journal file (same unlink limitation as git locks). Fix: `PRAGMA journal_mode=MEMORY` before writing. Use sparingly — no on-disk rollback journal during the write |
 
 ---
 
 ## Session Log
+
+### 2026-06-12 (launchpad rework)
+**Phase:** Feature evolution — TODAY landing + priorities + CRM  
+**Attempted:** Per Jeff: remove Housekeeping; "Lori To-dos" → orderable "Lori's Priorities"; new entry dashboard ("priorities and projects getting behind — that's my agenda"); Social Queue as CRM with steps due.  
+**Succeeded:** (1) `briefing.py` rebuilt as agenda engine — focus, ordered agenda, stale-project detection (14d no diary entry), goal-behind + dormant domains; single source for `/api/today`, `/api/brief`, Telegram. (2) `todos.sort_order` + inline migration (verified against copy of live DB) + `/move` endpoint + bot `/add <text>` `/check <n>`. (3) `next_action` per friend in social.py. (4) UI: TODAY default tab (dark focus card, numbered agenda, 3 summary cards), Priorities single ranked column with ▲▼, friend rows show "→ next step" line. House column gone. All verified live: migration fired, reorder works, agenda + brief render, JS parses.  
+**Failed:** Nothing  
+**New constraints discovered:** None  
+**Plan changes:** Locked Decisions updated (landing page, housekeeping retired, priorities ranking, CRM next_action, inline migrations)  
+**Awaiting user:** `docker compose up -d --build` (backend changed — rebuild required), browser look at TODAY tab, then commit on the Mac
+
+### 2026-06-12 (domain rename)
+**Phase:** Live data tweak  
+**Attempted:** Rename domains per Jeff: TECH→CODING, RSS→GAMING  
+**Succeeded:** Updated `key` + `label` in live data/dashboard.db (history intact — daily_log references domain_id) and in seed.py for fresh installs. Projects formerly under TECH now display CODING via the domain join. Bot quick-log is now `/log coding 2` / `/log gaming 1`.  
+**Failed:** First DB write hit sandbox journal-file limitation (see Debugging History — journal_mode=MEMORY workaround)  
+**Plan changes:** None
 
 ### 2026-06-12 (restyle session)
 **Phase:** Post-build polish — UI restyle  

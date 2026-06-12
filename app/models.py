@@ -94,5 +94,6 @@ class Todo(Base):
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     recur_type: Mapped[str] = mapped_column(String, default="none")  # none/weekly/monthly/custom
     recur_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)  # manual priority order
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

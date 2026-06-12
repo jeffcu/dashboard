@@ -11,6 +11,26 @@ from ..models import ContactHistory, Friend
 router = APIRouter(prefix="/api", tags=["social"])
 
 
+def next_action(f: Friend, overdue_days: int | None) -> dict:
+    """CRM next step: what to do for this contact to stay on plan."""
+    contact_verb = "Call" if f.type == "PHONE" else "Call / book lunch"
+    if f.phase == "TO_SCHEDULE":
+        if overdue_days:
+            return {"text": f"{contact_verb} now — {overdue_days}d past plan",
+                    "urgency": "overdue"}
+        if f.due_date:
+            return {"text": f"{contact_verb} by {f.due_date.strftime('%b %-d')}",
+                    "urgency": "due"}
+        return {"text": f"{contact_verb} — first touch, set the cycle",
+                "urgency": "due"}
+    if f.phase == "SCHEDULED":
+        note = f" ({f.static_note})" if f.static_note else ""
+        return {"text": f"Follow through{note}, then mark DONE",
+                "urgency": "scheduled"}
+    nxt = f.due_date.strftime("%b %-d") if f.due_date else "soon"
+    return {"text": f"Cycle complete — back in queue {nxt}", "urgency": "rest"}
+
+
 def friend_payload(f: Friend) -> dict:
     today = date.today()
     overdue_days = None
@@ -25,6 +45,7 @@ def friend_payload(f: Friend) -> dict:
         "due_date": f.due_date.isoformat() if f.due_date else None,
         "last_done_at": f.last_done_at.isoformat() if f.last_done_at else None,
         "overdue_days": overdue_days, "aging": aging,
+        "next_action": next_action(f, overdue_days),
     }
 
 

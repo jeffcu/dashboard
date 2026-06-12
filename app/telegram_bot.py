@@ -130,47 +130,54 @@ async def _cmd_schedule(update, context):
 
 
 async def _cmd_add(update, context):
-    """/add lori Schedule dentist"""
+    """/add Schedule dentist   (or legacy: /add lori Schedule dentist)"""
     if not _authorized(update):
         return
-    args = context.args or []
-    if len(args) < 2 or args[0].lower() not in ("lori", "house"):
-        await update.message.reply_text("Usage: /add <lori|house> <text>")
+    args = list(context.args or [])
+    if args and args[0].lower() == "house":
+        await update.message.reply_text(
+            "Housekeeping is retired — everything lives in Lori's Priorities now. "
+            "Use /add <text>.")
         return
-    list_id, text = args[0].lower(), " ".join(args[1:])
+    if args and args[0].lower() == "lori":
+        args = args[1:]
+    if not args:
+        await update.message.reply_text("Usage: /add <text>")
+        return
+    text = " ".join(args)
     db = SessionLocal()
     try:
-        db.add(Todo(list_id=list_id, text=text))
+        from .routers.todos import _next_sort_order
+        db.add(Todo(list_id="lori", text=text,
+                    sort_order=_next_sort_order(db, "lori")))
         db.commit()
-        await update.message.reply_text(f"✓ Added to {list_id.upper()}: {text}")
+        await update.message.reply_text(f"✓ Added to PRIORITIES: {text}")
     finally:
         db.close()
 
 
 async def _cmd_check(update, context):
-    """/check lori 1 — mark item #1 (as numbered in /brief order) done."""
+    """/check 1 — mark priority #1 (as numbered in /brief) done."""
     if not _authorized(update):
         return
-    args = context.args or []
-    if len(args) < 2 or args[0].lower() not in ("lori", "house"):
-        await update.message.reply_text("Usage: /check <lori|house> <number>")
+    args = [a for a in (context.args or []) if a.lower() not in ("lori", "house")]
+    if not args:
+        await update.message.reply_text("Usage: /check <number>")
         return
-    list_id = args[0].lower()
     try:
-        n = int(args[1])
+        n = int(args[0])
     except ValueError:
-        await update.message.reply_text("Number required, e.g. /check lori 1")
+        await update.message.reply_text("Number required, e.g. /check 1")
         return
     db = SessionLocal()
     try:
         items = (db.query(Todo)
-                 .filter(Todo.list_id == list_id, Todo.active == True,  # noqa: E712
+                 .filter(Todo.list_id == "lori", Todo.active == True,  # noqa: E712
                          Todo.done == False).all())  # noqa: E712
-        items.sort(key=lambda t: (t.due_date is None, t.due_date or date.max,
-                                  t.created_at))
+        items.sort(key=lambda t: t.sort_order)
         if not 1 <= n <= len(items):
             await update.message.reply_text(
-                f"{list_id.upper()} has {len(items)} open item(s).")
+                f"PRIORITIES has {len(items)} open item(s).")
             return
         t = items[n - 1]
         t.done = True

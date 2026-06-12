@@ -34,6 +34,7 @@ def get_summary(db: Session = Depends(get_db)):
 
     todos_today = (db.query(Todo)
                    .filter(Todo.active == True, Todo.done == False,  # noqa: E712
+                           Todo.list_id == "lori",
                            Todo.due_date != None, Todo.due_date <= today)  # noqa: E711
                    .all())
 
@@ -54,3 +55,9 @@ def get_summary(db: Session = Depends(get_db)):
 def get_brief(db: Session = Depends(get_db)):
     data = build_brief_data(db)
     return {"data": data, "text": format_brief_text(data)}
+
+
+@router.get("/today")
+def get_today(db: Session = Depends(get_db)):
+    """The morning launchpad — agenda, priorities, what's getting behind."""
+    return build_brief_data(db)
