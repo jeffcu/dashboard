@@ -1,4 +1,4 @@
-"""Todos API — Lori's Priorities: manually orderable, due dates, recurrence.
+"""Todos API — VIP Priorities: manually orderable, due dates, recurrence.
 
 The 'house' list is retired from the UI/briefing but the API stays
 list-generic so historical house rows remain readable.
@@ -15,7 +15,7 @@ from ..models import Todo
 
 router = APIRouter(prefix="/api", tags=["todos"])
 
-VALID_LISTS = ("lori", "house")
+VALID_LISTS = ("vip", "house")
 VALID_RECUR = ("none", "weekly", "monthly", "custom")
 
 

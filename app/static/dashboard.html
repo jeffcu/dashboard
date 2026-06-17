@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PERSONAL SYSTEMS</title>
+<title>The Board — Forward Balanced</title>
 <style>
 /* ════════════════════════════════════════════════════════
    WORKSHOP — warm paper, ink, burnt orange, deep teal.
@@ -159,8 +159,16 @@ select, input[type="date"], input[type="number"] {
   aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700; cursor: pointer; border-radius: 5px;
   min-height: 30px; user-select: none; border: 1px solid rgba(34,28,20,0.06);
+  position: relative;
 }
 .hm-cell:hover { box-shadow: inset 0 0 0 2px var(--orange); }
+.hm-minus {
+  position: absolute; bottom: 2px; right: 3px; font-size: 10px; font-weight: 900;
+  line-height: 1; opacity: 0; transition: opacity 0.1s; cursor: pointer;
+  color: var(--ink); padding: 1px 2px;
+}
+.hm-cell:hover .hm-minus { opacity: 0.55; }
+.hm-minus:hover { opacity: 1 !important; }
 .hm-col-total { font-size: 11px; font-weight: 800; color: var(--muted); text-align: center; padding: 3px 0; }
 .hm-col-total.goal-met { color: var(--green); }
 .hm-col-total.goal-risk { color: var(--red); }
@@ -170,21 +178,32 @@ select, input[type="date"], input[type="number"] {
 .hm-legend-label { font-size: 11px; font-weight: 600; color: var(--muted); }
 #hm-week-total { font-size: 12px; font-weight: 800; color: var(--ink); margin-left: 14px; }
 
-/* trends */
+/* week-by-week domain heatmap (replaces trends sparklines) */
 #trends-panel, #domain-panel {
   display: none; margin-top: 14px; background: var(--card);
   border: 1px solid var(--line); border-radius: 10px; padding: 16px;
   box-shadow: 0 1px 3px rgba(34,28,20,0.05);
 }
 #trends-panel.open, #domain-panel.open { display: block; }
-.trend-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid #F0EADD; }
-.trend-row:last-child { border-bottom: none; }
-.trend-key { width: 70px; font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: 0.5px; }
-.trend-key.dormant { color: var(--amber); }
-.trend-spark { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
-.trend-bar { width: 14px; background: #E8C9A8; border-radius: 2px 2px 0 0; min-height: 2px; }
-.trend-bar.cur { background: var(--orange); }
-.trend-meta { font-size: 12px; color: var(--muted); margin-left: 8px; }
+#weekly-hm { overflow-x: auto; }
+#weekly-hm table { border-collapse: collapse; font-size: 11px; width: 100%; }
+#weekly-hm th {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.5px; color: var(--muted);
+  padding: 3px 6px; text-align: center; white-space: nowrap;
+}
+#weekly-hm td.wk-label {
+  font-size: 10px; font-weight: 700; color: var(--muted); padding: 3px 10px 3px 0;
+  white-space: nowrap; text-align: right;
+}
+#weekly-hm td.wk-cell {
+  width: 36px; height: 24px; text-align: center; font-size: 10px; font-weight: 700;
+  border-radius: 4px; padding: 2px 4px;
+}
+#weekly-hm td.wk-total {
+  font-size: 10px; font-weight: 800; color: var(--ink);
+  padding: 3px 0 3px 10px; text-align: right;
+}
+#weekly-hm tr.wk-cur td.wk-label { color: var(--orange); font-weight: 800; }
 
 /* domain settings */
 .dom-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #F0EADD; }
@@ -196,7 +215,8 @@ select, input[type="date"], input[type="number"] {
 /* ── DIARIES ── */
 #proj-toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
 #proj-search { flex: 1; max-width: 340px; }
-#proj-grid, #proj-archive-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+#proj-grid { display: block; margin-bottom: 14px; }
+#proj-archive-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
 .proj-card {
   background: var(--card); border: 1px solid var(--line);
   border-left: 5px solid var(--orange); border-radius: 8px;
@@ -232,7 +252,6 @@ select, input[type="date"], input[type="number"] {
 }
 
 /* ── SOCIAL ── */
-#social-layout { display: grid; grid-template-columns: 1fr 280px; gap: 18px; }
 #queue-badge { font-size: 12px; font-weight: 800; letter-spacing: 0.8px; margin-bottom: 10px; }
 #queue-badge .overdue { color: var(--red); }
 #queue-badge .dueweek { color: var(--amber); }
@@ -240,30 +259,71 @@ select, input[type="date"], input[type="number"] {
   background: var(--card); border: 1px solid var(--line);
   border-left: 5px solid var(--orange); border-radius: 8px;
   padding: 10px 14px; margin-bottom: 6px;
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 10px;
   box-shadow: 0 1px 3px rgba(34,28,20,0.05);
 }
 .friend-row.phase-scheduled { border-left-color: var(--teal); }
 .friend-row.phase-done { border-left-color: var(--line); opacity: 0.55; }
 .friend-row.overdue { border-left-color: var(--red); }
+.friend-rank { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.friend-rank button { padding: 1px 5px; font-size: 9px; }
 .friend-info { flex: 1; min-width: 0; cursor: pointer; }
-.friend-name { font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 2px; }
+.friend-name { font-size: 15px; font-weight: 800; color: var(--ink); }
 .friend-name .od-badge { font-size: 11px; font-weight: 800; color: var(--red); margin-left: 8px; }
-.friend-name .aging-badge { font-size: 11px; font-weight: 800; color: var(--amber); margin-left: 8px; }
-.friend-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.friend-type-badge {
-  font-size: 9px; font-weight: 800; letter-spacing: 1px;
+.friend-mode-badge {
+  display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 0.8px;
   border: 1.5px solid var(--orange); color: var(--orange);
-  padding: 1px 7px; border-radius: 10px;
+  padding: 1px 6px; border-radius: 10px; margin-left: 6px;
 }
-.friend-type-badge.local { border-color: var(--teal); color: var(--teal); }
-.friend-phase { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; }
-.friend-phase.to-schedule { color: var(--orange); }
-.friend-phase.scheduled { color: var(--teal); }
-.friend-phase.done { color: var(--faint); }
-.friend-due { font-size: 11px; color: var(--muted); }
-.friend-note { font-size: 12px; color: var(--muted); margin-top: 3px; }
-.friend-actions { display: flex; gap: 5px; flex-shrink: 0; align-items: center; }
+.friend-mode-badge.lunch { border-color: var(--teal); color: var(--teal); }
+.friend-mode-badge.either { border-color: var(--muted); color: var(--muted); }
+.friend-compact { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-top: 3px; }
+.friend-next-step { font-size: 12px; font-weight: 700; }
+.friend-next-step.overdue { color: var(--red); }
+.friend-next-step.due { color: var(--amber); }
+.friend-next-step.scheduled { color: var(--teal); }
+.friend-next-step.rest { color: var(--faint); font-weight: 600; }
+.friend-dates { font-size: 11px; color: var(--muted); }
+.friend-static-note { font-size: 11px; color: var(--faint); font-style: italic; margin-top: 1px; }
+
+/* ── queue stats strip ── */
+#queue-stats {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  background: var(--paper); border: 1px solid var(--line);
+  border-radius: 6px; padding: 10px 14px; margin-bottom: 10px;
+  font-size: 11px; color: var(--muted);
+}
+#queue-stats .qs-item { display: flex; flex-direction: column; gap: 2px; }
+#queue-stats .qs-val { font-size: 18px; font-weight: 800; color: var(--ink); line-height: 1; }
+#queue-stats .qs-val.red { color: var(--red); }
+#queue-stats .qs-val.teal { color: var(--teal); }
+#queue-stats .qs-val.amber { color: var(--amber); }
+
+/* ── queue calendar ── */
+#queue-calendar {
+  margin-bottom: 12px; overflow-x: auto;
+}
+#queue-calendar table {
+  border-collapse: collapse; font-size: 11px; width: 100%; table-layout: fixed;
+}
+#queue-calendar th {
+  background: var(--orange); color: #fff; font-weight: 800; font-size: 10px;
+  letter-spacing: 0.5px; padding: 4px 6px; text-align: left;
+}
+#queue-calendar th.past { background: var(--faint); }
+#queue-calendar td {
+  border: 1px solid var(--line); padding: 4px 6px; vertical-align: top;
+  min-height: 36px; color: var(--ink);
+}
+#queue-calendar td.past { background: var(--paper); color: var(--muted); }
+#queue-calendar .cal-name {
+  display: inline-block; background: var(--teal); color: #fff;
+  border-radius: 3px; padding: 1px 5px; margin: 1px 2px 1px 0; font-size: 10px; font-weight: 700;
+}
+#queue-calendar .cal-name.overdue { background: var(--red); }
+#queue-calendar .cal-name.due { background: var(--amber); }
+#queue-calendar .cal-name.lunch { background: var(--olive); }
+.friend-actions { display: flex; gap: 4px; flex-shrink: 0; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .friend-history {
   background: #FBF8F2; border: 1px solid var(--line); border-left: 5px solid var(--teal);
   margin: -2px 0 8px 18px; padding: 8px 14px; border-radius: 8px;
@@ -271,11 +331,14 @@ select, input[type="date"], input[type="number"] {
 .hist-row { font-size: 12px; color: var(--body); padding: 3px 0; }
 .hist-row .h-date { color: var(--muted); margin-right: 10px; }
 .hist-row .h-action { color: var(--teal); font-weight: 800; margin-right: 10px; }
-#add-friend-form {
-  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-  padding: 14px; align-self: start; box-shadow: 0 1px 3px rgba(34,28,20,0.05);
+/* friend edit panel (inline expand) */
+.friend-edit-panel {
+  background: #FBF8F2; border: 1px solid var(--line);
+  margin: -2px 0 8px 0; padding: 12px 14px; border-radius: 8px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
 }
-#add-friend-form h3 { font-size: 12px; font-weight: 800; color: var(--teal); letter-spacing: 1.5px; margin-bottom: 12px; }
+.friend-edit-panel .form-row { margin-bottom: 0; }
+.friend-edit-actions { grid-column: 1 / -1; display: flex; gap: 6px; margin-top: 4px; }
 
 /* modal */
 #modal-bg {
@@ -363,7 +426,7 @@ select, input[type="date"], input[type="number"] {
 .agenda-item.u-behind { color: var(--amber); }
 .agenda-item.u-stale, .agenda-item.u-dormant { color: var(--body); }
 .agenda-item.u-stale::after { content: " ✦"; color: var(--teal); }
-#today-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+#today-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .today-card {
   background: var(--card); border: 1px solid var(--line); border-radius: 10px;
   padding: 14px 16px; box-shadow: 0 1px 3px rgba(34,28,20,0.05);
@@ -378,12 +441,188 @@ select, input[type="date"], input[type="number"] {
 .today-empty { font-size: 12px; color: var(--faint); padding: 6px 0; }
 .today-more { font-size: 11px; font-weight: 700; color: var(--muted); padding-top: 6px; cursor: pointer; }
 
-/* social CRM next-step */
-.friend-next { font-size: 12px; font-weight: 700; margin-top: 4px; }
-.friend-next.overdue { color: var(--red); }
-.friend-next.due { color: var(--amber); }
-.friend-next.scheduled { color: var(--teal); }
-.friend-next.rest { color: var(--faint); font-weight: 600; }
+/* ── GOALS PANEL (TODAY tab) ── */
+#goals-panel {
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 16px; margin-top: 14px; box-shadow: 0 1px 3px rgba(34,28,20,0.05);
+}
+.goals-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0; border-bottom: 1px solid #F0EADD;
+}
+.goals-row:last-child { border-bottom: none; }
+.goals-key {
+  width: 72px; font-size: 11px; font-weight: 800; color: var(--ink);
+  letter-spacing: 0.5px; flex-shrink: 0;
+}
+.goals-bar-wrap {
+  flex: 1; background: var(--line); border-radius: 3px; height: 8px; position: relative;
+}
+.goals-bar {
+  height: 8px; border-radius: 3px;
+  background: var(--orange); transition: width 0.3s;
+}
+.goals-bar.over  { background: var(--green); }
+.goals-bar.under { background: var(--red); }
+.goals-pcts {
+  display: flex; gap: 10px; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.goals-pct-wk   { color: var(--ink); }
+.goals-pct-mo   { color: var(--muted); }
+.goals-pct-ov   { color: var(--teal); }
+.goals-pct-goal { color: var(--faint); font-size: 10px; }
+.goals-gap {
+  font-size: 11px; font-weight: 800; width: 38px; text-align: right; flex-shrink: 0;
+}
+.goals-gap.under { color: var(--red); }
+.goals-gap.over  { color: var(--green); }
+/* domain settings goal_pct field */
+.dom-row input[type=number].goal-pct-input { width: 52px; }
+
+/* project aperiodic badge */
+.proj-aperiodic-badge {
+  font-size: 9px; font-weight: 800; letter-spacing: 1px;
+  padding: 1px 7px; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid var(--faint); color: var(--faint); display: inline-block;
+}
+.proj-aperiodic-badge.periodic { border-color: var(--orange); color: var(--orange); }
+/* diary tab filter */
+#proj-filters { display: flex; gap: 4px; margin-bottom: 12px; }
+.proj-filter-btn {
+  padding: 5px 14px; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  cursor: pointer; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--card); color: var(--muted); user-select: none;
+}
+.proj-filter-btn.on { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+/* domain group sections in Diaries */
+.dom-section { margin-bottom: 18px; }
+.dom-section-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 8px 8px 0 0;
+  font-size: 11px; font-weight: 800; letter-spacing: 2px;
+  color: #fff; cursor: pointer; user-select: none;
+  transition: filter 0.1s;
+}
+.dom-section-hdr:hover { filter: brightness(1.1); }
+.dom-section-hdr .dom-hdr-count { font-size: 10px; font-weight: 600; opacity: 0.75; margin-left: auto; }
+.dom-section-cards {
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px;
+  padding: 10px; background: var(--paper); border: 1px solid var(--line);
+  border-top: none; border-radius: 0 0 8px 8px; min-height: 60px;
+}
+.dom-section-cards.drag-over { background: #FEF3EC; outline: 2px dashed var(--orange); }
+.proj-card[draggable] { cursor: grab; }
+.proj-card[draggable]:active { cursor: grabbing; }
+.proj-card.dragging { opacity: 0.4; }
+
+/* domain editor modal */
+#dom-editor-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(34,28,20,0.45); z-index: 500;
+  align-items: center; justify-content: center;
+}
+#dom-editor-overlay.open { display: flex; }
+#dom-editor-modal {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 12px; padding: 20px 24px; min-width: 320px; max-width: 420px; width: 100%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+}
+#dom-editor-modal h3 { margin: 0 0 14px; font-size: 13px; letter-spacing: 1.5px; color: var(--muted); }
+#dom-editor-modal .form-row { margin-bottom: 10px; }
+#dom-editor-modal input, #dom-editor-modal select { width: 100%; }
+
+/* ── PROJECT TRACKER ── */
+#pt-wrap {
+  display: none; margin-top: 14px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 16px;
+  box-shadow: 0 1px 3px rgba(34,28,20,0.05); overflow-x: auto;
+}
+#pt-wrap.open { display: block; }
+#pt-table { border-collapse: collapse; min-width: 600px; width: 100%; }
+#pt-table th {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.6px; color: var(--muted);
+  padding: 4px 6px; text-align: center; white-space: nowrap;
+}
+#pt-table th.pt-name-col { text-align: left; min-width: 160px; }
+#pt-table th.pt-dom-col  { width: 60px; text-align: left; }
+.pt-section-hdr td {
+  padding: 10px 6px 4px; font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+  color: #fff; border-radius: 4px 4px 0 0;
+}
+.pt-section-hdr.first td { padding-top: 4px; }
+.pt-row { border-bottom: 1px solid #F0EADD; }
+.pt-row:last-child { border-bottom: none; }
+.pt-dom-badge {
+  display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 0.8px;
+  padding: 2px 7px; border-radius: 10px; color: #fff; white-space: nowrap;
+}
+.pt-proj-name {
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  padding: 6px 8px 6px 0; max-width: 200px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pt-cell {
+  width: 44px; height: 38px; text-align: center; cursor: pointer;
+  font-size: 13px; font-weight: 800; border-radius: 6px;
+  border: 1px solid rgba(34,28,20,0.06); position: relative;
+  transition: box-shadow 0.1s;
+}
+.pt-cell:hover { box-shadow: inset 0 0 0 2px var(--orange); }
+.pt-cell.today-col { box-shadow: inset 0 0 0 2px rgba(196,74,24,0.35); }
+.pt-cell.today-col:hover { box-shadow: inset 0 0 0 2px var(--orange); }
+.pt-minus {
+  position: absolute; bottom: 1px; right: 2px; font-size: 9px; font-weight: 900;
+  line-height: 1; opacity: 0; color: var(--ink); cursor: pointer; padding: 1px 2px;
+}
+.pt-cell:hover .pt-minus { opacity: 0.5; }
+.pt-minus:hover { opacity: 1 !important; }
+.pt-row-total {
+  font-size: 11px; font-weight: 800; color: var(--muted);
+  text-align: center; padding: 0 6px; white-space: nowrap;
+}
+.pt-row-total.has-hours { color: var(--ink); }
+.pt-col-total {
+  font-size: 11px; font-weight: 800; text-align: center;
+  padding: 4px 6px; color: var(--ink);
+}
+.pt-empty { font-size: 12px; color: var(--faint); padding: 8px 0; font-style: italic; }
+/* drag & drop */
+.pt-section-hdr.drag-over td { outline: 2px dashed var(--orange); }
+.pt-row.drag-over td { background: #FEF3EC; }
+.pt-row[draggable] { cursor: grab; }
+.pt-section-hdr[draggable] { cursor: grab; }
+/* domain inline-edit row */
+.pt-dom-edit-row td { padding: 6px 8px; background: var(--paper); border-bottom: 2px solid var(--orange); }
+.pt-dom-edit-row input { font-size: 12px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); }
+/* color picker */
+.color-picker-wrap { position: relative; display: inline-block; }
+.color-swatch-btn { width: 28px; height: 28px; border-radius: 6px; border: 2px solid var(--line); cursor: pointer; display: inline-block; vertical-align: middle; }
+.color-picker-grid { display: none; position: absolute; z-index: 200; top: 34px; left: 0;
+  background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  display: none; grid-template-columns: repeat(8, 26px); gap: 4px; width: 256px; }
+.color-picker-grid.open { display: grid; }
+.color-swatch { width: 26px; height: 26px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; }
+.color-swatch:hover { transform: scale(1.2); border-color: var(--ink); }
+.color-swatch.selected { border-color: var(--ink); box-shadow: 0 0 0 1px #fff inset; }
+/* diary restructure */
+#diary-panel.open { display: flex; flex-direction: column; position: sticky; top: 72px; max-height: calc(100vh - 90px); overflow-y: auto; z-index: 10; }
+#diary-mgmt { display: none; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+#diary-mgmt.open { display: block; }
+.proj-all-time { font-size: 10px; font-weight: 700; color: var(--faint); margin-top: 1px; }
+/* view toggle buttons */
+.view-toggle {
+  display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin-left: 8px;
+}
+.view-toggle button {
+  background: var(--card); color: var(--muted); border: none; border-radius: 0;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.8px; padding: 6px 13px;
+}
+.view-toggle button:hover { background: #EFE7D9; color: var(--ink); }
+.view-toggle button.on { background: var(--ink); color: var(--paper); }
+.view-toggle button:first-child { border-right: 1px solid var(--line); }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--paper); }
@@ -395,8 +634,8 @@ select, input[type="date"], input[type="number"] {
 <div id="header">
   <div id="header-inner">
     <span>
-      <span id="wordmark">PERSONAL<span class="accent">SYSTEMS</span></span>
-      <span id="tagline">BUILD · RIDE · PAINT · CONNECT</span>
+      <span id="wordmark">THE<span class="accent">BOARD</span></span>
+      <span id="tagline">FORWARD BALANCED</span>
     </span>
     <span id="today-date">—</span>
   </div>
@@ -428,20 +667,38 @@ select, input[type="date"], input[type="number"] {
   </div>
   <div id="today-grid">
     <div class="today-card">
-      <div class="today-card-title">LORI'S PRIORITIES
+      <div class="today-card-title">VIP PRIORITIES
         <button class="dim" onclick="switchTab('todos')">OPEN ▸</button></div>
       <div id="today-priorities"></div>
-    </div>
-    <div class="today-card">
-      <div class="today-card-title">GETTING BEHIND
-        <button class="dim" onclick="switchTab('diaries')">PROJECTS ▸</button></div>
-      <div id="today-behind"></div>
     </div>
     <div class="today-card">
       <div class="today-card-title">SOCIAL — STEPS DUE
         <button class="dim" onclick="switchTab('social')">CRM ▸</button></div>
       <div id="today-social"></div>
     </div>
+    <div class="today-card">
+      <div class="today-card-title">RESEARCH THREADS
+        <button class="dim" onclick="switchTab('diaries')">DIARIES ▸</button></div>
+      <div id="today-research"></div>
+    </div>
+    <div class="today-card">
+      <div class="today-card-title">GETTING BEHIND
+        <button class="dim" onclick="switchTab('diaries')">PROJECTS ▸</button></div>
+      <div id="today-behind"></div>
+    </div>
+  </div>
+
+  <div id="goals-panel">
+    <div class="today-card-title">BALANCE GOALS — TOP 5 UNDERPERFORMING
+      <button class="dim" onclick="switchTab('daily')">DAILY LOG ▸</button>
+    </div>
+    <div style="display:flex;gap:18px;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;padding:4px 0 6px;border-bottom:1px solid var(--line);margin-bottom:4px;">
+      <span style="width:72px;flex-shrink:0;">ACTIVITY</span>
+      <span style="flex:1;">PROGRESS (WEEK % / GOAL %)</span>
+      <span style="width:88px;text-align:right;">WK · MO · 8WK</span>
+      <span style="width:38px;text-align:right;">GAP</span>
+    </div>
+    <div id="goals-list"></div>
   </div>
 </div>
 
@@ -449,20 +706,27 @@ select, input[type="date"], input[type="number"] {
 <div id="panel-daily" class="panel">
   <div class="sec-hdr">
     <span class="sec-label">DAILY LOG</span>
-    <span class="sec-hint">LEFT CLICK +1H · RIGHT CLICK −1H</span>
+    <span class="sec-hint">CLICK +1H · HOVER → − TO DECREMENT</span>
   </div>
   <div id="hm-nav">
     <button class="dim" onclick="hmNav(-1)">◀ PREV</button>
     <button class="dim" onclick="hmNav(0)">TODAY</button>
     <button class="dim" onclick="hmNav(1)">NEXT ▶</button>
     <span id="hm-week-label"></span>
-    <button class="dim" onclick="toggleTrends()">TRENDS</button>
+    <div class="view-toggle">
+      <button id="vt-domains" onclick="setTrackerView('domains')">DOMAINS</button>
+      <button id="vt-projects" class="on" onclick="setTrackerView('projects')">PROJECTS</button>
+    </div>
+    <button class="dim" onclick="toggleTrends()">WEEKLY VIEW</button>
     <button class="dim" onclick="toggleDomains()">⚙ DOMAINS</button>
   </div>
-  <div id="hm-wrap">
+  <!-- DOMAINS VIEW (hidden by default) -->
+  <div id="hm-wrap" style="display:none;">
     <div id="hm-grid"></div>
     <div id="hm-legend"></div>
   </div>
+  <!-- PROJECTS VIEW (shown by default) -->
+  <div id="pt-wrap" class="open"></div>
   <div id="trends-panel"></div>
   <div id="domain-panel"></div>
 </div>
@@ -472,6 +736,12 @@ select, input[type="date"], input[type="number"] {
   <div class="sec-hdr">
     <span class="sec-label">PROJECT DIARIES</span>
     <span class="sec-hint">CLICK CARD TO OPEN JOURNAL</span>
+  </div>
+  <div id="proj-filters">
+    <div class="proj-filter-btn on" onclick="setProjFilter('active')">ACTIVE</div>
+    <div class="proj-filter-btn" onclick="setProjFilter('research')">RESEARCH</div>
+    <div class="proj-filter-btn" onclick="setProjFilter('backlog')">BACKLOG</div>
+    <div class="proj-filter-btn" onclick="setProjFilter('archive')">ARCHIVED</div>
   </div>
   <div id="proj-toolbar">
     <input type="text" id="proj-search" class="form-input" placeholder="Search entries…"
@@ -486,21 +756,80 @@ select, input[type="date"], input[type="number"] {
     <div class="form-row"><label class="form-label">DOMAIN</label>
       <select id="np-domain"></select></div>
     <div class="form-row"><label class="form-label">ACCENT COLOR</label>
-      <input type="text" id="np-color" class="form-input" value="#C44A18"></div>
+      <div class="color-picker-wrap">
+        <div class="color-swatch-btn" id="np-color-swatch" onclick="toggleColorPicker('np')" style="background:#C44A18;"></div>
+        <input type="hidden" id="np-color" value="#C44A18">
+        <div class="color-picker-grid" id="np-color-grid"></div>
+      </div></div>
     <div class="form-row"><label class="form-label">NOTE</label>
       <input type="text" id="np-note" class="form-input"></div>
+    <div class="form-row"><label class="form-label">CATEGORY</label>
+      <select id="np-category">
+        <option value="WORK">ACTIVE (work project)</option>
+        <option value="RESEARCH">RESEARCH QUEUE</option>
+        <option value="BACKLOG">BACKLOG (imported todo)</option>
+      </select></div>
+    <div class="form-row"><label class="form-label">% TIME GOAL (0 = none)</label>
+      <input type="number" id="np-goal-pct" class="form-input" value="0" min="0" max="100" style="width:80px;"></div>
     <button onclick="createProject()">CREATE PROJECT</button>
   </div>
   <div id="proj-grid"></div>
-  <div id="archive-hdr" onclick="toggleArchive()">▸ ARCHIVE</div>
-  <div id="proj-archive-grid" style="display:none;"></div>
   <div id="diary-panel">
     <div id="diary-header">
-      <span id="diary-title"></span>
-      <button class="dim" onclick="setProjStatus('PAUSED')">PAUSE</button>
-      <button class="dim" onclick="setProjStatus('DONE')">MARK DONE</button>
-      <button class="dim" onclick="setProjStatus('ACTIVE')">REACTIVATE</button>
+      <div style="flex:1;min-width:0;">
+        <div id="diary-title" style="font-size:17px;font-weight:800;color:var(--ink);"></div>
+        <div id="diary-subtitle" style="font-size:11px;color:var(--faint);margin-top:1px;"></div>
+      </div>
+      <button class="dim" onclick="toggleDiaryMgmt()" id="diary-mgmt-btn" title="Settings">⚙ SETTINGS</button>
       <button onclick="closeDiary()">CLOSE ✕</button>
+    </div>
+    <!-- management controls — hidden by default, toggle via ⚙ -->
+    <div id="diary-mgmt">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="dim" id="diary-aperiodic-btn" onclick="toggleAperiodic()" title="Aperiodic = no dormant warnings">∞ APERIODIC</button>
+        <span style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--muted);">
+          <label style="font-size:10px;letter-spacing:1px;">%GOAL</label>
+          <input type="number" id="diary-goal-pct" min="0" max="100" style="width:52px;font-size:11px;padding:4px 6px;" onchange="saveProjGoalPct()" title="Target % of total time">
+        </span>
+        <button class="dim" onclick="setProjStatus('PAUSED')">PAUSE</button>
+        <button class="dim" onclick="setProjStatus('DONE')">ARCHIVE</button>
+        <button class="dim" onclick="setProjStatus('ACTIVE')">RESTORE</button>
+        <button class="danger" onclick="deleteProject()">DELETE</button>
+      </div>
+      <!-- inline edit form -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-row" style="margin:0;grid-column:1/-1;">
+          <label class="form-label">NAME</label>
+          <input type="text" id="pe-name" class="form-input">
+        </div>
+        <div class="form-row" style="margin:0;">
+          <label class="form-label">DOMAIN</label>
+          <select id="pe-domain" class="form-input" style="width:100%;"></select>
+        </div>
+        <div class="form-row" style="margin:0;">
+          <label class="form-label">CATEGORY</label>
+          <select id="pe-category" class="form-input" style="width:100%;">
+            <option value="WORK">ACTIVE (work)</option>
+            <option value="RESEARCH">RESEARCH</option>
+            <option value="BACKLOG">BACKLOG</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin:0;">
+          <label class="form-label">ACCENT COLOR</label>
+          <div class="color-picker-wrap">
+            <div class="color-swatch-btn" id="pe-color-swatch" onclick="toggleColorPicker('pe')" style="background:#C44A18;"></div>
+            <input type="hidden" id="pe-color" value="#C44A18">
+            <div class="color-picker-grid" id="pe-color-grid"></div>
+          </div>
+        </div>
+        <div class="form-row" style="margin:0;">
+          <label class="form-label">NOTE</label>
+          <input type="text" id="pe-note" class="form-input">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="saveProjEdit()">SAVE CHANGES</button>
+      </div>
     </div>
     <div id="diary-entries"></div>
     <div id="diary-new">
@@ -510,29 +839,107 @@ select, input[type="date"], input[type="number"] {
   </div>
 </div>
 
+<!-- ═══ DOMAIN EDITOR MODAL ═══ -->
+<div id="dom-editor-overlay" onclick="if(event.target===this)closeDomEditor()">
+  <div id="dom-editor-modal">
+    <h3 id="dom-editor-title">EDIT DOMAIN</h3>
+    <input type="hidden" id="dom-editor-id">
+    <div class="form-row">
+      <label class="form-label">LABEL</label>
+      <input type="text" id="dom-editor-label" class="form-input">
+    </div>
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <label class="form-label">WK HOURS GOAL</label>
+        <input type="number" id="dom-editor-wkgoal" class="form-input" min="0" max="60">
+      </div>
+      <div>
+        <label class="form-label">% TIME GOAL</label>
+        <input type="number" id="dom-editor-pct" class="form-input" min="0" max="100">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button onclick="saveDomEditor()">SAVE</button>
+      <button class="dim" onclick="closeDomEditor()">CANCEL</button>
+      <button class="danger" style="margin-left:auto;" onclick="archiveDomEditor()">ARCHIVE</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ SOCIAL ═══ -->
 <div id="panel-social" class="panel">
   <div class="sec-hdr">
     <span class="sec-label">SOCIAL QUEUE</span>
-    <span class="sec-hint">CLICK NAME FOR HISTORY · MAINTAIN CONTACT CYCLE</span>
+    <span class="sec-hint">WHO'S ON DECK · ▲▼ TO REORDER</span>
+    <div style="margin-left:auto;display:flex;gap:6px;">
+      <button class="dim" onclick="toggleQueueCalendar()" title="8-week timeline view">📅 CALENDAR</button>
+      <button class="dim" onclick="openSpreadModal()" title="Distribute contacts from today">↔ SPREAD</button>
+      <button onclick="openAddFriendModal()">+ ADD CONTACT</button>
+    </div>
   </div>
+  <div id="queue-stats"></div>
+  <div id="queue-calendar" style="display:none;"></div>
   <div id="queue-badge"></div>
-  <div id="social-layout">
-    <div id="friends-list"></div>
-    <div id="add-friend-form">
-      <h3>ADD CONTACT</h3>
-      <div class="form-row"><label class="form-label">NAME</label>
-        <input type="text" id="new-friend-name" class="form-input"></div>
-      <div class="form-row"><label class="form-label">TYPE</label>
-        <div class="radio-row">
-          <label><input type="radio" name="new-friend-type" value="PHONE" checked> PHONE</label>
-          <label><input type="radio" name="new-friend-type" value="LOCAL"> LOCAL</label>
-        </div></div>
-      <div class="form-row"><label class="form-label">CADENCE (DAYS)</label>
-        <input type="number" id="new-friend-cadence" class="form-input" value="30" min="1"></div>
-      <div class="form-row"><label class="form-label">NOTE (OPTIONAL)</label>
-        <input type="text" id="new-friend-note" class="form-input"></div>
-      <button onclick="addFriend()">ADD CONTACT</button>
+  <div id="friends-list"></div>
+</div>
+
+<!-- Spread Modal -->
+<div id="spread-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(34,28,20,0.45);align-items:center;justify-content:center;z-index:60;">
+  <div style="background:var(--card);border-top:5px solid var(--orange);border-radius:10px;padding:20px;width:360px;box-shadow:0 12px 32px rgba(34,28,20,0.25);">
+    <h3 style="font-size:13px;font-weight:800;color:var(--ink);letter-spacing:1.5px;margin-bottom:8px;">SPREAD CONTACTS FROM TODAY</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Distributes all contacts evenly across a window starting today, in queue order. Resets everyone to TO_SCHEDULE.</p>
+    <div class="form-row" style="margin-bottom:14px;">
+      <label class="form-label">WINDOW (DAYS) — spread across this range</label>
+      <input type="number" id="spread-days" class="form-input" value="30" min="7" max="90">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="doSpread()">SPREAD QUEUE</button>
+      <button class="dim" onclick="closeSpreadModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Friend Modal -->
+<div id="friend-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(34,28,20,0.45);align-items:center;justify-content:center;z-index:60;">
+  <div style="background:var(--card);border-top:5px solid var(--teal);border-radius:10px;padding:20px;width:420px;box-shadow:0 12px 32px rgba(34,28,20,0.25);">
+    <h3 id="friend-modal-title" style="font-size:13px;font-weight:800;color:var(--ink);letter-spacing:1.5px;margin-bottom:14px;">ADD CONTACT</h3>
+    <input type="hidden" id="fm-id" value="">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-row" style="grid-column:1/-1;margin:0;">
+        <label class="form-label">NAME</label>
+        <input type="text" id="fm-name" class="form-input">
+      </div>
+      <div class="form-row" style="margin:0;">
+        <label class="form-label">CONTACT TYPE</label>
+        <select id="fm-type" class="form-input" style="width:100%;">
+          <option value="PHONE">PHONE (not local)</option>
+          <option value="LOCAL">LOCAL (in town)</option>
+        </select>
+      </div>
+      <div class="form-row" style="margin:0;">
+        <label class="form-label">MEETING MODE</label>
+        <select id="fm-mode" class="form-input" style="width:100%;" onchange="fmModeChange()">
+          <option value="CALL">CALL (phone/video)</option>
+          <option value="LUNCH">LUNCH (in-person primary)</option>
+          <option value="EITHER">EITHER (flexible)</option>
+        </select>
+      </div>
+      <div class="form-row" style="margin:0;">
+        <label class="form-label">CADENCE (DAYS)</label>
+        <input type="number" id="fm-cadence" class="form-input" value="30" min="1" style="width:100%;">
+      </div>
+      <div class="form-row" id="fm-advance-row" style="margin:0;display:none;">
+        <label class="form-label">CALL-AHEAD DAYS (for lunch scheduling)</label>
+        <input type="number" id="fm-advance" class="form-input" value="21" min="1" style="width:100%;">
+      </div>
+      <div class="form-row" style="grid-column:1/-1;margin:0;">
+        <label class="form-label">NOTE (shows on row)</label>
+        <input type="text" id="fm-note" class="form-input">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+      <button class="dim" onclick="closeFriendModal()">CANCEL</button>
+      <button onclick="saveFriendModal()">SAVE</button>
     </div>
   </div>
 </div>
@@ -540,28 +947,28 @@ select, input[type="date"], input[type="number"] {
 <!-- ═══ PRIORITIES ═══ -->
 <div id="panel-todos" class="panel">
   <div class="sec-hdr">
-    <span class="sec-label">LORI'S PRIORITIES</span>
+    <span class="sec-label">VIP PRIORITIES</span>
     <span class="sec-hint">RANKED BY YOU · ▲▼ TO REORDER · #1 IS THE NEXT MOVE</span>
   </div>
   <div id="todo-layout">
     <div class="todo-col">
       <div class="todo-add-row">
-        <input type="text" id="lori-input" class="todo-add-input" placeholder="New priority…"
-               onkeydown="if(event.key==='Enter')addTodo('lori')">
-        <input type="date" id="lori-due">
-        <select id="lori-recur">
+        <input type="text" id="vip-input" class="todo-add-input" placeholder="New priority…"
+               onkeydown="if(event.key==='Enter')addTodo('vip')">
+        <input type="date" id="vip-due">
+        <select id="vip-recur">
           <option value="none">no repeat</option><option value="weekly">weekly</option>
           <option value="monthly">monthly</option><option value="custom">custom…</option>
         </select>
-        <input type="number" id="lori-recur-days" placeholder="days" style="width:60px;display:none;" min="1">
-        <button onclick="addTodo('lori')">ADD</button>
+        <input type="number" id="vip-recur-days" placeholder="days" style="width:60px;display:none;" min="1">
+        <button onclick="addTodo('vip')">ADD</button>
       </div>
-      <div id="lori-list"></div>
-      <div class="done-hdr" onclick="toggleDone('lori')">
-        <span>▸ DONE (<span id="lori-done-count">0</span>)</span>
-        <button class="dim" onclick="event.stopPropagation();clearCompleted('lori')">CLEAR</button>
+      <div id="vip-list"></div>
+      <div class="done-hdr" onclick="toggleDone('vip')">
+        <span>▸ DONE (<span id="vip-done-count">0</span>)</span>
+        <button class="dim" onclick="event.stopPropagation();clearCompleted('vip')">CLEAR</button>
       </div>
-      <div id="lori-done" class="done-list"></div>
+      <div id="vip-done" class="done-list"></div>
     </div>
   </div>
 </div>
@@ -623,7 +1030,9 @@ function switchTab(name) {
   panels.forEach(p => p.classList.remove('on'));
   tabs[map[name]].classList.add('on');
   panels[map[name]].classList.add('on');
-  if (name === 'today') loadToday();  // launchpad always reflects latest state
+  if (name === 'today') loadToday();
+  if (name === 'daily') { if (trackerView === 'projects') loadProjectTracker(); else loadWeek(); }
+  if (name === 'social') { loadFriends(); loadQueueStats(); }
 }
 
 // ════════════════════════════════════════════════════════
@@ -659,7 +1068,16 @@ async function loadToday() {
           + (d.priorities.length - 6) + ' more ▸</div>' : '')
     : '<div class="today-empty">No open priorities.</div>';
 
-  // getting behind: goals at risk + stale projects + dormant domains
+  // research threads
+  const rp = d.research_projects || [];
+  document.getElementById('today-research').innerHTML = rp.length
+    ? rp.map(p => '<div class="today-row"><span class="t-strong">'
+        + esc(p.name) + '</span><span>'
+        + (p.note ? esc(p.note) : (p.days_quiet > 0 ? 'quiet ' + p.days_quiet + 'd' : 'new'))
+        + '</span></div>').join('')
+    : '<div class="today-empty">No research threads. Add some in Diaries ▸</div>';
+
+  // getting behind: goals at risk + stale work projects + dormant domains
   let behind = '';
   for (const dom of d.domains.filter(x => x.behind_goal)) {
     behind += '<div class="today-row t-amber"><span class="t-strong">'
@@ -695,7 +1113,48 @@ async function loadToday() {
   }
   document.getElementById('today-social').innerHTML =
     soc || '<div class="today-empty">Every relationship on plan.</div>';
+
+  // goals panel
+  loadGoals();
 }
+
+async function loadGoals() {
+  let g;
+  try { g = await api('/api/goals'); } catch(e) { return; }
+  const el = document.getElementById('goals-list');
+  if (!g.underperformers || g.underperformers.length === 0) {
+    el.innerHTML = '<div class="today-empty">All activities at or above goal. ✦</div>';
+    return;
+  }
+  el.innerHTML = g.underperformers.map(item => {
+    const label = item.label || item.key;
+    const goalPct = item.goal_pct;
+    const wkPct = item.week_pct;
+    const moPct = item.month_pct;
+    const ovPct = item.overall_pct;
+    const barW = Math.min(100, goalPct > 0 ? Math.round(wkPct / goalPct * 100) : 0);
+    const barCls = item.gap >= 0 ? 'over' : 'under';
+    const gapStr = (item.gap >= 0 ? '+' : '') + item.gap + '%';
+    const gapCls = item.gap >= 0 ? 'over' : 'under';
+    return '<div class="goals-row">'
+      + '<span class="goals-key" title="' + esc(label) + '">'
+        + esc(label.length > 10 ? label.slice(0,10) + '…' : label)
+        + '</span>'
+      + '<div class="goals-bar-wrap">'
+        + '<div class="goals-bar ' + barCls + '" style="width:' + barW + '%;"></div>'
+        + '<div style="position:absolute;left:' + Math.min(98, goalPct) + '%;top:0;height:8px;width:2px;background:var(--ink);opacity:0.3;border-radius:1px;"></div>'
+        + '</div>'
+      + '<div class="goals-pcts">'
+        + '<span class="goals-pct-wk">' + wkPct + '%</span>'
+        + '<span class="goals-pct-mo">' + moPct + '%</span>'
+        + '<span class="goals-pct-ov">' + ovPct + '%</span>'
+        + '<span class="goals-pct-goal">/' + goalPct + '%</span>'
+        + '</div>'
+      + '<span class="goals-gap ' + gapCls + '">' + gapStr + '</span>'
+      + '</div>';
+  }).join('');
+}
+
 function updateHeaderDate() {
   const d = new Date();
   document.getElementById('today-date').textContent =
@@ -739,6 +1198,7 @@ let hmOffset = 0, hmData = null;
 function hmNav(dir) {
   hmOffset = dir === 0 ? 0 : hmOffset + dir;
   loadWeek();
+  if (trackerView === 'projects') loadProjectTracker();
 }
 
 async function loadWeek() {
@@ -758,6 +1218,10 @@ function hmClick(dateStr, key) {
 }
 function hmRight(evt, dateStr, key) {
   evt.preventDefault();
+  const v = hmData.cells[dateStr + '_' + key] || 0;
+  if (v > 0) hmSet(dateStr, key, v - 1);
+}
+function hmDecrement(dateStr, key) {
   const v = hmData.cells[dateStr + '_' + key] || 0;
   if (v > 0) hmSet(dateStr, key, v - 1);
 }
@@ -787,12 +1251,17 @@ function renderHeatmap() {
     for (const dom of doms) {
       const v = d.cells[dateStr + '_' + dom.key] || 0;
       rowSum += v;
+      const cellColor = v >= 4 ? '#FFFFFF' : (v > 0 ? '#7A4A12' : 'transparent');
+      const minusColor = v >= 4 ? 'rgba(255,255,255,0.8)' : 'var(--muted)';
       cells += '<div class="hm-cell" style="background:' + HM_COLORS[v]
-        + ';color:' + (v >= 4 ? '#FFFFFF' : (v > 0 ? '#7A4A12' : 'transparent')) + ';'
+        + ';color:' + cellColor + ';'
         + (isToday ? 'box-shadow:inset 0 0 0 2px #C44A18;' : '') + '"'
         + ' onclick="hmClick(\'' + dateStr + '\',\'' + dom.key + '\')"'
         + ' oncontextmenu="hmRight(event,\'' + dateStr + '\',\'' + dom.key + '\')">'
-        + (v || '') + '</div>';
+        + (v || '')
+        + (v > 0 ? '<span class="hm-minus" style="color:' + minusColor + '" onclick="event.stopPropagation();hmDecrement(\''
+          + dateStr + '\',\'' + dom.key + '\')">−</span>' : '')
+        + '</div>';
     }
     html += '<div class="hm-day-label' + (isToday ? ' today' : '') + '">'
       + DAY_NAMES[r] + '</div>' + cells
@@ -822,29 +1291,331 @@ function renderHeatmap() {
   document.getElementById('hm-legend').innerHTML = lhtml;
 }
 
-// trends
+// ════════════════════════════════════════════════════════
+// PROJECT TRACKER (toggle view)
+// ════════════════════════════════════════════════════════
+let trackerView = 'projects'; // 'domains' | 'projects'
+let ptData = null;
+
+// A rotating palette of distinct warm/cool colours — one per domain group
+const PT_PALETTE = [
+  '#1E6E62','#C44A18','#3A6EA5','#5C7C2F',
+  '#8A5A2B','#B07D10','#6B4E8A','#C75512','#2E7D8A','#7A4A12'
+];
+const domainColorCache = {};
+function domainColor(key) {
+  if (!domainColorCache[key]) {
+    const keys = Object.keys(domainColorCache);
+    domainColorCache[key] = PT_PALETTE[keys.length % PT_PALETTE.length];
+  }
+  return domainColorCache[key];
+}
+// Pre-seed colors from project accent_colors so colors stay stable with user's existing palette
+function seedDomainColors(projects) {
+  for (const p of projects) {
+    if (p.domain_key && !domainColorCache[p.domain_key]) {
+      domainColorCache[p.domain_key] = p.accent_color || PT_PALETTE[Object.keys(domainColorCache).length % PT_PALETTE.length];
+    }
+  }
+}
+
+function setTrackerView(v) {
+  trackerView = v;
+  document.getElementById('vt-domains').classList.toggle('on', v === 'domains');
+  document.getElementById('vt-projects').classList.toggle('on', v === 'projects');
+  document.getElementById('hm-wrap').style.display = v === 'domains' ? '' : 'none';
+  document.getElementById('pt-wrap').classList.toggle('open', v === 'projects');
+  if (v === 'projects') loadProjectTracker();
+}
+
+async function loadProjectTracker() {
+  ptData = await api('/api/project-log/week?offset=' + hmOffset);
+  seedDomainColors(ptData.projects || []);
+  renderProjectTracker();
+}
+
+function ptClick(dateStr, projId) {
+  const v = (ptData.cells[dateStr + '_' + projId] || 0);
+  ptSet(dateStr, projId, Math.min(8, v + 1));
+}
+function ptDecrement(dateStr, projId) {
+  const v = (ptData.cells[dateStr + '_' + projId] || 0);
+  if (v > 0) ptSet(dateStr, projId, v - 1);
+}
+async function ptSet(dateStr, projId, hours) {
+  await api('/api/project-log', { method: 'POST',
+    body: { date: dateStr, project_id: projId, hours: hours } });
+  ptData = await api('/api/project-log/week?offset=' + hmOffset);
+  renderProjectTracker();
+  // also refresh domain heatmap so domain totals stay in sync
+  hmData = await api('/api/log/week?offset=' + hmOffset);
+  if (trackerView === 'domains') renderHeatmap();
+}
+
+const DAY_ABBR = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+
+// ── Drag state ───────────────────────────────────────────
+let ptDragType = null;  // 'domain' | 'project'
+let ptDragId   = null;  // domain key or project id
+
+function ptDomDragStart(e, domKey) {
+  ptDragType = 'domain'; ptDragId = domKey;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.5';
+}
+function ptDomDragEnd(e) { e.currentTarget.style.opacity = ''; }
+function ptProjDragStart(e, projId) {
+  ptDragType = 'project'; ptDragId = projId;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.5';
+}
+function ptProjDragEnd(e) { e.currentTarget.style.opacity = ''; }
+
+async function ptDomDrop(e, targetKey) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (ptDragType === 'project') {
+    // move dragged project to this domain
+    const dk = targetKey === '__none__' ? null : targetKey;
+    await api('/api/projects/' + ptDragId, { method: 'PATCH', body: { domain_key: dk } });
+    await loadProjectTracker(); await loadProjects(); return;
+  }
+  if (ptDragType !== 'domain' || ptDragId === targetKey) return;
+  const src = (ptData.domains || []).find(d => (d.key || '__none__') === ptDragId);
+  const tgt = (ptData.domains || []).find(d => (d.key || '__none__') === targetKey);
+  if (!src || !tgt || !src.id || !tgt.id) return;
+  await api('/api/domains/' + src.id, { method: 'PATCH', body: { sort_order: tgt.sort_order } });
+  await api('/api/domains/' + tgt.id, { method: 'PATCH', body: { sort_order: src.sort_order } });
+  await loadProjectTracker(); await loadWeek();
+}
+async function ptProjDrop(e, targetId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (ptDragType !== 'project' || ptDragId === targetId) return;
+  const src = (ptData.projects || []).find(p => p.id === ptDragId);
+  const tgt = (ptData.projects || []).find(p => p.id === targetId);
+  if (!src || !tgt) return;
+  const body = { sort_order: tgt.sort_order };
+  if (src.domain_key !== tgt.domain_key) body.domain_key = tgt.domain_key;
+  await api('/api/projects/' + ptDragId, { method: 'PATCH', body });
+  await api('/api/projects/' + targetId, { method: 'PATCH', body: { sort_order: src.sort_order } });
+  await loadProjectTracker(); await loadProjects();
+}
+
+// ── Domain inline edit ────────────────────────────────────
+let ptEditDomId = null;
+async function ptOpenDomEdit(domId) {
+  if (ptEditDomId === domId) { ptCloseDomEdit(); return; }
+  ptEditDomId = domId;
+  renderProjectTracker();
+}
+function ptCloseDomEdit() { ptEditDomId = null; renderProjectTracker(); }
+async function ptSaveDomEdit(domId) {
+  await api('/api/domains/' + domId, { method: 'PATCH', body: {
+    label: document.getElementById('ptde-label-' + domId).value,
+    weekly_goal: parseInt(document.getElementById('ptde-wkgoal-' + domId).value) || 0,
+    goal_pct: parseInt(document.getElementById('ptde-pct-' + domId).value) || 0,
+  }});
+  ptEditDomId = null;
+  await loadProjectTracker(); await loadWeek();
+}
+
+function renderProjectTracker() {
+  const d = ptData;
+  const wrap = document.getElementById('pt-wrap');
+  const todayStr = d.today;
+  const allProjects = d.projects || [];
+
+  if (allProjects.length === 0) {
+    wrap.innerHTML = '<div class="pt-empty" style="padding:20px;">No projects yet. Add projects in the Diaries tab.</div>';
+    return;
+  }
+
+  const dayTotals = d.days.map(day =>
+    allProjects.reduce((s, p) => s + (d.cells[day + '_' + p.id] || 0), 0)
+  );
+
+  const grouped = {};
+  for (const dom of (d.domains || [])) grouped[dom.key || '__none__'] = { dom, projs: [] };
+  for (const p of allProjects) {
+    const dk = p.domain_key || '__none__';
+    if (!grouped[dk]) grouped[dk] = { dom: { key: dk, label: 'Unassigned' }, projs: [] };
+    grouped[dk].projs.push(p);
+  }
+
+  function projRow(p, dk) {
+    let cells = '';
+    for (const day of d.days) {
+      const v = d.cells[day + '_' + p.id] || 0;
+      const isToday = day === todayStr;
+      const bg = v > 0 ? HM_COLORS[Math.min(v, 8)] : '';
+      const fg = v >= 4 ? '#FFFFFF' : (v > 0 ? '#7A4A12' : '');
+      const mc = v >= 4 ? 'rgba(255,255,255,0.8)' : 'var(--muted)';
+      cells += `<td><div class="pt-cell${isToday ? ' today-col' : ''}" style="background:${bg};color:${fg};"
+        onclick="ptClick('${day}',${p.id})">${v || ''}${v > 0
+          ? `<span class="pt-minus" style="color:${mc}" onclick="event.stopPropagation();ptDecrement('${day}',${p.id})">−</span>` : ''
+        }</div></td>`;
+    }
+    const wkH = d.days.reduce((s, day) => s + (d.cells[day + '_' + p.id] || 0), 0);
+    const allH = p.all_time_hours || 0;
+    const dimmed = p.status === 'PAUSED';
+    const accentDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${esc(p.accent_color || '#aaa')};margin-right:5px;flex-shrink:0;"></span>`;
+    return `<tr class="pt-row" style="${dimmed ? 'opacity:0.5;' : ''}"
+      draggable="true"
+      ondragstart="ptProjDragStart(event,${p.id})"
+      ondragend="ptProjDragEnd(event)"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="ptProjDrop(event,${p.id})">
+      <td class="pt-proj-name" title="${esc(p.name)}">${accentDot}${esc(p.name)}</td>
+      ${cells}
+      <td class="pt-row-total${wkH > 0 ? ' has-hours' : ''}">
+        <div>${wkH > 0 ? wkH + 'h' : '—'}</div>
+        ${allH > 0 ? `<div style="font-size:9px;color:var(--faint);font-weight:600;">${allH}h tot</div>` : ''}
+      </td>
+    </tr>`;
+  }
+
+  let html = `<table id="pt-table">
+    <thead><tr>
+      <th class="pt-name-col" style="text-align:left;">PROJECT</th>
+      ${d.days.map((day, i) => {
+        const isToday = day === todayStr;
+        return `<th style="${isToday ? 'color:var(--orange);font-weight:900;' : ''}">${DAY_ABBR[i]}</th>`;
+      }).join('')}
+      <th style="min-width:46px;">WK / ALL</th>
+    </tr></thead><tbody>`;
+
+  for (const [dk, { dom, projs }] of Object.entries(grouped)) {
+    if (projs.length === 0) continue;
+    const dColor = domainColor(dk === '__none__' ? '—' : dk);
+    const domLabel = dom.label || dom.key || 'Unassigned';
+    const domId = dom.id;
+    const allTimeH = dom.all_time_hours || 0;
+    const isEditing = domId && ptEditDomId === domId;
+
+    html += `<tr class="pt-section-hdr" draggable="${domId ? 'true' : 'false'}"
+      ondragstart="ptDomDragStart(event,'${dk}')"
+      ondragend="ptDomDragEnd(event)"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="ptDomDrop(event,'${dk}')">
+      <td colspan="${d.days.length + 2}"
+        style="background:${dColor};color:#fff;padding:5px 10px;font-size:11px;font-weight:800;letter-spacing:1.8px;border-radius:3px;cursor:${domId ? 'pointer' : 'default'};"
+        onclick="${domId ? 'ptOpenDomEdit(' + domId + ')' : ''}">
+        ${esc(domLabel.toUpperCase())}
+        ${allTimeH > 0 ? `<span style="font-size:10px;font-weight:600;opacity:0.8;margin-left:10px;">${allTimeH}h</span>` : ''}
+        ${domId ? '<span style="float:right;font-size:10px;opacity:0.7;">✎</span>' : ''}
+      </td>
+    </tr>`;
+
+    if (isEditing) {
+      html += `<tr class="pt-dom-edit-row">
+        <td colspan="${d.days.length + 2}">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <input id="ptde-label-${domId}" value="${esc(domLabel)}" style="width:140px;" placeholder="Label">
+            <label style="font-size:10px;color:var(--muted);">WK HRS</label>
+            <input id="ptde-wkgoal-${domId}" type="number" value="${dom.weekly_goal||0}" min="0" max="60" style="width:50px;">
+            <label style="font-size:10px;color:var(--muted);">% GOAL</label>
+            <input id="ptde-pct-${domId}" type="number" value="${dom.goal_pct||0}" min="0" max="100" style="width:50px;">
+            <button onclick="ptSaveDomEdit(${domId})">SAVE</button>
+            <button class="dim" onclick="ptCloseDomEdit()">CANCEL</button>
+          </div>
+        </td>
+      </tr>`;
+    }
+
+    for (const p of projs) html += projRow(p, dk);
+  }
+
+  html += `<tr style="border-top:2px solid var(--line);">
+    <td style="padding:5px 0;font-size:10px;font-weight:800;color:var(--orange);letter-spacing:1px;">WEEK TOTAL</td>
+    ${dayTotals.map((t, i) => {
+      const isToday = d.days[i] === todayStr;
+      return `<td class="pt-col-total" style="${isToday ? 'color:var(--orange);' : ''}">${t || '—'}</td>`;
+    }).join('')}
+    <td class="pt-row-total has-hours">${d.week_total > 0 ? d.week_total + 'h' : '—'}</td>
+  </tr>`;
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// week-by-week domain heatmap (replaces sparklines)
 async function toggleTrends() {
   const p = document.getElementById('trends-panel');
   if (p.classList.contains('open')) { p.classList.remove('open'); return; }
-  const t = await api('/api/log/trends?weeks=8');
-  let html = '<div class="sec-hint" style="margin-bottom:10px;">LAST 8 WEEKS · STREAK = CONSECUTIVE WEEKS ≥1H</div>';
+  const t = await api('/api/log/trends?weeks=12');
+
+  // find max value across all cells for color scaling
+  let maxVal = 1;
   for (const dom of t.domains) {
-    const max = Math.max.apply(null, dom.weeks.concat([1]));
-    let spark = '';
-    dom.weeks.forEach((v, i) => {
-      const h = Math.max(2, Math.round(v / max * 26));
-      spark += '<div class="trend-bar' + (i === dom.weeks.length - 1 ? ' cur' : '')
-        + '" style="height:' + h + 'px;" title="' + v + 'h"></div>';
-    });
-    html += '<div class="trend-row">'
-      + '<div class="trend-key' + (dom.dormant ? ' dormant' : '') + '">'
-      + esc(dom.key) + (dom.dormant ? ' ⚠' : '') + '</div>'
-      + '<div class="trend-spark">' + spark + '</div>'
-      + '<div class="trend-meta">' + dom.weeks[dom.weeks.length - 1] + 'h this wk'
-      + ' · streak ' + dom.streak
-      + (dom.weekly_goal ? ' · goal ' + dom.weekly_goal + 'h' : '') + '</div>'
-      + '</div>';
+    for (const v of dom.weeks) if (v > maxVal) maxVal = v;
   }
+
+  // color ramp: 0=paper, then orange scale
+  const WK_COLORS = ['#EFE8DC','#FBE3C9','#F8CFA3','#F4B97D','#EFA055',
+                     '#E68534','#D96B1E','#C75512','#B2430C'];
+  function wkColor(v) {
+    if (v === 0) return WK_COLORS[0];
+    const idx = Math.max(1, Math.min(8, Math.ceil(v / maxVal * 8)));
+    return WK_COLORS[idx];
+  }
+  function wkTextColor(v) {
+    return (v / maxVal) >= 0.55 ? '#FFFFFF' : (v > 0 ? '#7A4A12' : 'transparent');
+  }
+
+  const nWeeks = t.domains[0] ? t.domains[0].weeks.length : 0;
+  // build week labels from oldest to newest
+  // weeks[0] = oldest, weeks[n-1] = current week
+  const today = new Date();
+  const weekLabels = [];
+  for (let i = nWeeks - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - d.getDay() + 1 - i * 7);  // Monday
+    weekLabels.push(d.toLocaleDateString('en-US', { month:'short', day:'numeric' }));
+  }
+
+  let html = '<div id="weekly-hm"><table>';
+  // header row: week dates
+  html += '<tr><th style="text-align:right;">WEEK</th>';
+  for (let i = 0; i < nWeeks; i++) {
+    html += '<th>' + weekLabels[i] + '</th>';
+  }
+  html += '<th style="text-align:right;">GOAL</th></tr>';
+
+  // one row per domain
+  for (const dom of t.domains) {
+    const isCur = false;  // highlight current week column instead of row
+    html += '<tr><td class="wk-label">' + esc(dom.key)
+      + (dom.dormant ? ' ⚠' : '') + '</td>';
+    for (let i = 0; i < dom.weeks.length; i++) {
+      const v = dom.weeks[i];
+      const isCurCol = (i === dom.weeks.length - 1);
+      html += '<td class="wk-cell" style="background:' + wkColor(v)
+        + ';color:' + wkTextColor(v)
+        + (isCurCol ? ';outline:2px solid var(--orange);outline-offset:-1px;border-radius:4px;' : '')
+        + '" title="' + v + 'h">' + (v || '') + '</td>';
+    }
+    html += '<td class="wk-total">' + (dom.weekly_goal ? dom.weekly_goal + 'h' : '—')
+      + '</td></tr>';
+  }
+
+  // totals row
+  html += '<tr style="border-top:2px solid var(--line);"><td class="wk-label" style="color:var(--orange);font-weight:800;">TOTAL</td>';
+  const colTotals = Array(nWeeks).fill(0);
+  for (const dom of t.domains) {
+    dom.weeks.forEach((v, i) => { colTotals[i] += v; });
+  }
+  for (let i = 0; i < nWeeks; i++) {
+    const isCurCol = (i === nWeeks - 1);
+    html += '<td class="wk-total" style="text-align:center;font-weight:800;color:var(--ink);'
+      + (isCurCol ? 'color:var(--orange);' : '') + '">'
+      + (colTotals[i] || '—') + '</td>';
+  }
+  html += '<td></td></tr>';
+  html += '</table></div>';
+
   p.innerHTML = html;
   p.classList.add('open');
 }
@@ -860,11 +1631,15 @@ async function toggleDomains() {
 async function renderDomainPanel() {
   const doms = await api('/api/domains');
   const p = document.getElementById('domain-panel');
-  let html = '<div class="sec-hint" style="margin-bottom:10px;">DOMAIN SETTINGS — GOAL 0 = NO GOAL</div>';
+  let html = '<div class="sec-hint" style="margin-bottom:6px;">DOMAIN SETTINGS — WK GOAL=hrs/week · % GOAL=target share of total time (0=none)</div>'
+    + '<div style="display:flex;gap:8px;padding:0 0 4px;font-size:9px;font-weight:800;color:var(--muted);letter-spacing:1px;">'
+    + '<span style="width:70px;">KEY</span><span style="width:130px;">LABEL</span>'
+    + '<span style="width:58px;">WK HRS</span><span style="width:52px;">% GOAL</span></div>';
   for (const d of doms.filter(x => x.active)) {
     html += '<div class="dom-row"><span class="dom-key">' + esc(d.key) + '</span>'
       + '<input type="text" id="dl-' + d.id + '" value="' + esc(d.label) + '" class="form-input">'
-      + '<input type="number" id="dg-' + d.id + '" value="' + d.weekly_goal + '" min="0" max="60">'
+      + '<input type="number" id="dg-' + d.id + '" value="' + d.weekly_goal + '" min="0" max="60" title="weekly hour goal">'
+      + '<input type="number" id="dp-' + d.id + '" value="' + (d.goal_pct || 0) + '" min="0" max="100" class="goal-pct-input" title="% of total time goal">'
       + '<button class="dim" onclick="saveDomain(' + d.id + ')">SAVE</button>'
       + '<button class="dim" onclick="moveDomain(' + d.id + ',-1)">▲</button>'
       + '<button class="dim" onclick="moveDomain(' + d.id + ',1)">▼</button>'
@@ -891,6 +1666,7 @@ async function saveDomain(id) {
   await api('/api/domains/' + id, { method: 'PATCH', body: {
     label: document.getElementById('dl-' + id).value,
     weekly_goal: parseInt(document.getElementById('dg-' + id).value) || 0,
+    goal_pct: parseInt(document.getElementById('dp-' + id).value) || 0,
   }});
   await renderDomainPanel(); await loadWeek();
 }
@@ -923,51 +1699,317 @@ async function addDomain() {
   await renderDomainPanel(); await loadWeek();
 }
 
+// ── Color picker ─────────────────────────────────────────
+const PALETTE_64 = [
+  // Warm reds & oranges
+  '#7A1010','#A01515','#C44A18','#D4621E','#E07A2A','#E8942F','#CF7010','#B85A10',
+  // Ambers & golds
+  '#9A6A00','#C08A00','#D4A017','#B89030','#A07828','#C4A040','#D4B84A','#E8CC6A',
+  // Olive & yellow-green
+  '#6B7C2A','#5C7C2F','#4A7020','#3D6018','#788B30','#8EA040','#A0B050','#C0C870',
+  // Forest & teal greens
+  '#1A5C30','#1E6E3A','#2A7A48','#166050','#1E6E62','#1A7878','#1A6868','#0E5050',
+  // Blues
+  '#1A3A6A','#1E4E8A','#2A5A9A','#1E6E9A','#1A7AAA','#2A88B8','#1A6890','#0E5070',
+  // Purples & slates
+  '#3A2A5A','#4A3A6A','#5A4878','#6A5888','#503060','#624278','#7A5898','#6A6A9A',
+  // Warm browns
+  '#3A1E0A','#4A2C14','#5A3C1E','#6A4C2A','#7A5C34','#5A3020','#6A4030','#7A5040',
+  // Neutrals & charcoals
+  '#221C14','#3A3028','#4A4038','#5A5048','#6A6058','#8A8070','#A09880','#C0B8A8',
+];
+
+let openPickerId = null;
+
+function initColorPickers() {
+  const grid = PALETTE_64.map((c, i) => `<div class="color-swatch" style="background:${c};" onclick="pickColor(event,'${c}')"></div>`).join('');
+  document.querySelectorAll('.color-picker-grid').forEach(el => el.innerHTML = grid);
+  // Close picker on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.color-picker-wrap')) closeColorPickers();
+  });
+}
+
+function toggleColorPicker(prefix) {
+  const grid = document.getElementById(prefix + '-color-grid');
+  if (!grid) return;
+  const isOpen = grid.classList.contains('open');
+  closeColorPickers();
+  if (!isOpen) {
+    openPickerId = prefix;
+    grid.classList.add('open');
+    // mark current color
+    const cur = document.getElementById(prefix + '-color').value;
+    grid.querySelectorAll('.color-swatch').forEach(s => {
+      s.classList.toggle('selected', s.style.background === cur || rgbToHex(s.style.background) === cur);
+    });
+  }
+}
+
+function closeColorPickers() {
+  document.querySelectorAll('.color-picker-grid').forEach(g => g.classList.remove('open'));
+  openPickerId = null;
+}
+
+function pickColor(e, color) {
+  e.stopPropagation();
+  if (!openPickerId) return;
+  document.getElementById(openPickerId + '-color').value = color;
+  const swatch = document.getElementById(openPickerId + '-color-swatch');
+  if (swatch) swatch.style.background = color;
+  closeColorPickers();
+}
+
+function rgbToHex(rgb) {
+  const m = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+  if (!m) return rgb;
+  return '#' + [m[1],m[2],m[3]].map(x => parseInt(x).toString(16).padStart(2,'0')).join('');
+}
+
 // ════════════════════════════════════════════════════════
 // MODULE 2 — PROJECT DIARIES
 // ════════════════════════════════════════════════════════
-let projects = [], activeProjId = null;
+let projects = [], domainsList = [], activeProjId = null, projFilter = 'active';
 
 async function loadProjects() {
-  projects = await api('/api/projects');
+  [projects, domainsList] = await Promise.all([api('/api/projects'), api('/api/domains')]);
+  seedDomainColors(projects);
   renderProjects();
-  const doms = await api('/api/domains');
-  document.getElementById('np-domain').innerHTML =
-    '<option value="">— none —</option>'
-    + doms.filter(d => d.active).map(d =>
-        '<option value="' + esc(d.key) + '">' + esc(d.key) + '</option>').join('');
+  const activeDoms = domainsList.filter(d => d.active);
+  const domOpts = '<option value="">— none —</option>'
+    + activeDoms.map(d => '<option value="' + esc(d.key) + '">' + esc(d.key) + ' — ' + esc(d.label) + '</option>').join('');
+  document.getElementById('np-domain').innerHTML = domOpts;
 }
 
-function projCard(p, archived) {
+function setProjFilter(f) {
+  projFilter = f;
+  document.querySelectorAll('.proj-filter-btn').forEach((b, i) => {
+    b.classList.toggle('on', ['active','research','backlog','archive'][i] === f);
+  });
+  const catMap = { research: 'RESEARCH', backlog: 'BACKLOG' };
+  document.getElementById('np-category').value = catMap[f] || 'WORK';
+  renderProjects();
+}
+
+// ── Project card drag state ───────────────────────────────
+let diaryDragId = null;
+
+function projCard(p) {
+  const archived = p.status !== 'ACTIVE';
+  const isActive = !archived;
   return '<div class="proj-card' + (activeProjId === p.id ? ' selected' : '')
-    + (archived ? ' archived' : '') + '" onclick="openDiary(' + p.id + ')"'
+    + (archived ? ' archived' : '') + '"'
+    + (isActive ? ' draggable="true" ondragstart="diaryProjDragStart(event,' + p.id + ')" ondragend="diaryProjDragEnd(event)"' : '')
+    + ' onclick="openDiary(' + p.id + ')"'
     + ' style="border-left-color:' + esc(p.accent_color) + '">'
     + '<div class="proj-cat" style="color:' + esc(p.accent_color) + '">'
-    + esc(p.domain_key || '—') + (archived ? ' · ' + p.status : '') + '</div>'
+    + (archived ? p.status : '') + '</div>'
     + '<div class="proj-name">' + esc(p.name) + '</div>'
     + '<div class="proj-note">' + esc(p.note || '') + '</div>'
-    + '<div class="proj-count">' + (p.entry_count === 0 ? 'no entries'
+    + '<div class="proj-count" style="margin-top:4px;">' + (p.entry_count === 0 ? 'no entries'
       : p.entry_count + (p.entry_count === 1 ? ' entry' : ' entries')) + '</div>'
     + '</div>';
 }
 
-function renderProjects() {
-  const active = projects.filter(p => p.status === 'ACTIVE');
-  const arch = projects.filter(p => p.status !== 'ACTIVE');
-  document.getElementById('proj-grid').innerHTML = active.map(p => projCard(p, false)).join('');
-  document.getElementById('proj-archive-grid').innerHTML = arch.map(p => projCard(p, true)).join('');
-  document.getElementById('archive-hdr').textContent =
-    (document.getElementById('proj-archive-grid').style.display === 'none' ? '▸' : '▾')
-    + ' ARCHIVE (' + arch.length + ')';
+function diaryProjDragStart(e, id) {
+  diaryDragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.classList.add('dragging');
+}
+function diaryProjDragEnd(e) {
+  diaryDragId = null;
+  e.currentTarget.classList.remove('dragging');
+}
+async function diaryDomDrop(e, domKey) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!diaryDragId) return;
+  const newKey = domKey === '__none__' ? null : domKey;
+  await api('/api/projects/' + diaryDragId, { method: 'PATCH', body: { domain_key: newKey } });
+  diaryDragId = null;
+  await loadProjects();
+  if (activeProjId) await loadProjectTracker();
 }
 
-function toggleArchive() {
-  const g = document.getElementById('proj-archive-grid');
-  g.style.display = g.style.display === 'none' ? 'grid' : 'none';
-  renderProjects();
+function renderProjects() {
+  let visible;
+  if (projFilter === 'active') {
+    visible = projects.filter(p => p.status === 'ACTIVE' && p.category === 'WORK');
+  } else if (projFilter === 'research') {
+    visible = projects.filter(p => p.status === 'ACTIVE' && p.category === 'RESEARCH');
+  } else if (projFilter === 'backlog') {
+    visible = projects.filter(p => p.category === 'BACKLOG' && p.status !== 'DELETED');
+  } else {
+    visible = projects.filter(p => (p.status === 'PAUSED' || p.status === 'DONE') && p.category !== 'BACKLOG');
+  }
+
+  if (!visible.length) {
+    const msg = { research: 'No research threads.', backlog: 'No backlog items.', archive: 'Nothing archived.', active: 'No active projects.' }[projFilter] || 'No projects.';
+    document.getElementById('proj-grid').innerHTML = `<div style="color:var(--faint);font-size:13px;padding:12px 0;">${msg}</div>`;
+    return;
+  }
+
+  // Group by domain using domainsList order
+  const byDom = {};
+  for (const p of visible) {
+    const dk = p.domain_key || '__none__';
+    if (!byDom[dk]) byDom[dk] = [];
+    byDom[dk].push(p);
+  }
+
+  // Ordered domain keys: follow domainsList order, then unassigned
+  const orderedKeys = (domainsList.filter(d => d.active).map(d => d.key))
+    .filter(k => byDom[k]);
+  if (byDom['__none__']) orderedKeys.push('__none__');
+
+  const domMap = Object.fromEntries(domainsList.map(d => [d.key, d]));
+
+  let html = '';
+  for (const dk of orderedKeys) {
+    const projs = byDom[dk] || [];
+    const dom = domMap[dk];
+    const domId = dom ? dom.id : null;
+    const domLabel = dom ? dom.label : 'Unassigned';
+    const dColor = domainColor(dk === '__none__' ? '—' : dk);
+
+    html += `<div class="dom-section">
+      <div class="dom-section-hdr" style="background:${dColor};"
+        onclick="${domId ? 'openDomEditor(' + domId + ')' : ''}">
+        ${esc(domLabel.toUpperCase())}
+        <span class="dom-hdr-count">${projs.length} project${projs.length !== 1 ? 's' : ''} · ✎</span>
+      </div>
+      <div class="dom-section-cards"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="diaryDomDrop(event,'${dk}')">
+        ${projs.map(projCard).join('')}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('proj-grid').innerHTML = html;
 }
+
+// ── Domain editor popup ───────────────────────────────────
+function openDomEditor(domId) {
+  const dom = domainsList.find(d => d.id === domId);
+  if (!dom) return;
+  document.getElementById('dom-editor-id').value = domId;
+  document.getElementById('dom-editor-title').textContent = 'EDIT DOMAIN — ' + dom.key;
+  document.getElementById('dom-editor-label').value = dom.label;
+  document.getElementById('dom-editor-wkgoal').value = dom.weekly_goal || 0;
+  document.getElementById('dom-editor-pct').value = dom.goal_pct || 0;
+  document.getElementById('dom-editor-overlay').classList.add('open');
+}
+function closeDomEditor() {
+  document.getElementById('dom-editor-overlay').classList.remove('open');
+}
+async function saveDomEditor() {
+  const id = parseInt(document.getElementById('dom-editor-id').value);
+  await api('/api/domains/' + id, { method: 'PATCH', body: {
+    label: document.getElementById('dom-editor-label').value.trim(),
+    weekly_goal: parseInt(document.getElementById('dom-editor-wkgoal').value) || 0,
+    goal_pct: parseInt(document.getElementById('dom-editor-pct').value) || 0,
+  }});
+  closeDomEditor();
+  await loadProjects();
+  await loadWeek();
+}
+async function archiveDomEditor() {
+  const id = parseInt(document.getElementById('dom-editor-id').value);
+  const dom = domainsList.find(d => d.id === id);
+  if (!confirm('Archive domain ' + (dom ? dom.key : id) + '? Projects remain but domain is hidden.')) return;
+  await api('/api/domains/' + id, { method: 'PATCH', body: { active: false } });
+  closeDomEditor();
+  await loadProjects();
+  await loadWeek();
+}
+
 function toggleAddProject() {
   document.getElementById('add-proj-panel').classList.toggle('open');
+  initColorPickers();
+}
+
+async function toggleProjAperiodic(id, cur) {
+  // 0 = aperiodic (no nag), 14 = default check-in
+  const next = cur === 0 ? 14 : 0;
+  await api('/api/projects/' + id, { method: 'PATCH', body: { check_in_days: next } });
+  await loadProjects();
+}
+async function toggleAperiodic() {
+  if (!activeProjId) return;
+  const p = projects.find(x => x.id === activeProjId);
+  if (!p) return;
+  const next = (p.check_in_days === 0) ? 14 : 0;
+  await api('/api/projects/' + activeProjId, { method: 'PATCH', body: { check_in_days: next } });
+  await loadProjects();
+  updateAperiodicBtn();
+}
+function updateAperiodicBtn() {
+  const p = projects.find(x => x.id === activeProjId);
+  const btn = document.getElementById('diary-aperiodic-btn');
+  if (!p || !btn) return;
+  btn.textContent = p.check_in_days === 0 ? '∞ APERIODIC (ON)' : '∞ APERIODIC';
+  btn.style.color = p.check_in_days === 0 ? 'var(--teal)' : '';
+  btn.style.borderColor = p.check_in_days === 0 ? 'var(--teal)' : '';
+  const gp = document.getElementById('diary-goal-pct');
+  if (gp) gp.value = p.goal_pct || 0;
+}
+async function saveProjGoalPct() {
+  if (!activeProjId) return;
+  const v = parseInt(document.getElementById('diary-goal-pct').value) || 0;
+  await api('/api/projects/' + activeProjId, { method: 'PATCH', body: { goal_pct: v } });
+  await loadProjects();
+}
+
+function toggleDiaryMgmt() {
+  const panel = document.getElementById('diary-mgmt');
+  const isOpen = panel.classList.toggle('open');
+  if (isOpen) populateProjEditForm();
+}
+async function populateProjEditForm() {
+  if (!activeProjId) return;
+  const p = projects.find(x => x.id === activeProjId);
+  if (!p) return;
+  const doms = await api('/api/domains');
+  document.getElementById('pe-domain').innerHTML =
+    '<option value="">— none —</option>'
+    + doms.filter(d => d.active).map(d =>
+        `<option value="${esc(d.key)}"${p.domain_key === d.key ? ' selected' : ''}>${esc(d.key)} — ${esc(d.label)}</option>`
+      ).join('');
+  document.getElementById('pe-name').value = p.name;
+  document.getElementById('pe-category').value = p.category || 'WORK';
+  const color = p.accent_color || '#C44A18';
+  document.getElementById('pe-color').value = color;
+  const sw = document.getElementById('pe-color-swatch');
+  if (sw) sw.style.background = color;
+  document.getElementById('pe-note').value = p.note || '';
+  initColorPickers();
+}
+async function saveProjEdit() {
+  if (!activeProjId) return;
+  const body = {
+    name: document.getElementById('pe-name').value.trim(),
+    domain_key: document.getElementById('pe-domain').value || null,
+    category: document.getElementById('pe-category').value,
+    accent_color: document.getElementById('pe-color').value.trim(),
+    note: document.getElementById('pe-note').value.trim(),
+  };
+  if (!body.name) { alert('Name is required.'); return; }
+  await api('/api/projects/' + activeProjId, { method: 'PATCH', body });
+  document.getElementById('diary-mgmt').classList.remove('open');
+  await loadProjects();
+  // update diary title
+  const p = projects.find(x => x.id === activeProjId);
+  if (p) document.getElementById('diary-title').textContent = p.name;
+}
+async function deleteProject() {
+  if (!activeProjId) return;
+  const p = projects.find(x => x.id === activeProjId);
+  if (!confirm(`Delete "${p ? p.name : 'this project'}"? This cannot be undone from the UI.`)) return;
+  await api('/api/projects/' + activeProjId, { method: 'PATCH', body: { status: 'DELETED' } });
+  closeDiary();
+  await loadProjects();
 }
 
 async function createProject() {
@@ -978,23 +2020,41 @@ async function createProject() {
     domain_key: document.getElementById('np-domain').value || null,
     accent_color: document.getElementById('np-color').value.trim() || '#C44A18',
     note: document.getElementById('np-note').value.trim(),
+    category: document.getElementById('np-category').value || 'WORK',
+    goal_pct: parseInt(document.getElementById('np-goal-pct').value) || 0,
   }});
   document.getElementById('np-name').value = '';
   document.getElementById('np-note').value = '';
   document.getElementById('add-proj-panel').classList.remove('open');
   await loadProjects();
+  // stay on the filter tab that matches what was just created
+  const cat = document.getElementById('np-category').value || 'WORK';
+  const filterMap = { RESEARCH: 'research', BACKLOG: 'backlog' };
+  setProjFilter(filterMap[cat] || 'active');
 }
 
 async function openDiary(id) {
   activeProjId = id;
   renderProjects();
   const p = projects.find(x => x.id === id);
+  const panel = document.getElementById('diary-panel');
   document.getElementById('diary-title').textContent = p ? p.name : '';
-  document.getElementById('diary-panel').classList.add('open');
+  // subtitle: domain + all-time hours tally
+  const sub = [];
+  if (p && p.domain_key) sub.push(p.domain_key);
+  if (p && p.entry_count > 0) sub.push(p.entry_count + ' entries');
+  document.getElementById('diary-subtitle').textContent = sub.join(' · ');
+  // close mgmt panel on open
+  document.getElementById('diary-mgmt').classList.remove('open');
+  panel.classList.add('open');
+  updateAperiodicBtn();
+  // scroll panel to top of viewport
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // load entries immediately
   const entries = await api('/api/diary/' + id);
   const el = document.getElementById('diary-entries');
   el.innerHTML = entries.length === 0
-    ? '<div class="diary-empty">No entries yet.</div>'
+    ? '<div class="diary-empty">No entries yet — write the first one below.</div>'
     : entries.map(e => '<div class="diary-entry"><div class="diary-ts">'
         + new Date(e.created_at).toLocaleString('en-US', { weekday:'short', month:'short',
             day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' })
@@ -1039,87 +2099,237 @@ async function searchEntries() {
 }
 
 // ════════════════════════════════════════════════════════
-// MODULE 3 — SOCIAL QUEUE
+// MODULE 3 — SOCIAL QUEUE (CRM)
 // ════════════════════════════════════════════════════════
-let openHistoryId = null;
+let openHistoryId = null, openEditId = null, queueCalendarOpen = false;
+
+async function loadQueueStats() {
+  const s = await api('/api/friends/stats');
+  if (!s || !s.total) { document.getElementById('queue-stats').innerHTML = ''; return; }
+  const eff = s.efficiency_pct;
+  const effClass = eff >= 80 ? 'teal' : (eff >= 50 ? 'amber' : 'red');
+  document.getElementById('queue-stats').innerHTML =
+    stat(s.total, 'CONTACTS') +
+    stat(s.overdue, 'OVERDUE', s.overdue > 0 ? 'red' : '') +
+    stat(s.due_this_week, 'DUE THIS WEEK', s.due_this_week > 0 ? 'amber' : '') +
+    stat(s.avg_cadence_days + 'd', 'AVG CADENCE') +
+    stat(s.monthly_touchpoints.toFixed(1), 'TOUCH-POINTS/MO') +
+    stat(s.cycle_days + 'd', 'CYCLE TIME') +
+    stat(eff + '%', 'ON SCHEDULE', effClass);
+  if (queueCalendarOpen) renderQueueCalendar(s.week_buckets);
+}
+function stat(val, label, cls='') {
+  return '<div class="qs-item"><span class="qs-val ' + cls + '">' + val + '</span><span>' + label + '</span></div>';
+}
+
+async function toggleQueueCalendar() {
+  queueCalendarOpen = !queueCalendarOpen;
+  const el = document.getElementById('queue-calendar');
+  if (!queueCalendarOpen) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  const s = await api('/api/friends/stats');
+  renderQueueCalendar(s.week_buckets);
+}
+
+function renderQueueCalendar(weekBuckets) {
+  const el = document.getElementById('queue-calendar');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const todayIso = today.toISOString().slice(0,10);
+
+  // Build week column headers for -1 to +10 weeks (12 total)
+  let html = '<table><tr><th style="width:80px">WEEK OF</th>';
+  const weeks = [];
+  for (let w = -1; w <= 10; w++) {
+    const wStart = new Date(today);
+    wStart.setDate(today.getDate() - today.getDay() + 1 + w * 7); // Mon start
+    const label = wStart.toLocaleDateString('en-US', {month:'short',day:'numeric'});
+    const isPast = w < 0;
+    const isCurrent = w === 0;
+    weeks.push({ wStart, key: String(w), isPast });
+    html += '<th class="' + (isPast ? 'past' : '') + '" style="' + (isCurrent ? 'background:var(--orange);' : '') + '">' + label + '</th>';
+  }
+  html += '</tr><tr><td style="font-size:10px;color:var(--muted);vertical-align:top;">DUE</td>';
+
+  for (const { key, isPast } of weeks) {
+    const names = weekBuckets[key] || [];
+    html += '<td class="' + (isPast ? 'past' : '') + '">';
+    for (const name of names) {
+      html += '<span class="cal-name">' + esc(name) + '</span>';
+    }
+    html += '</td>';
+  }
+  html += '</tr></table>';
+  el.innerHTML = html;
+}
+
+// Spread modal
+function openSpreadModal() {
+  document.getElementById('spread-modal-bg').style.display = 'flex';
+}
+function closeSpreadModal() {
+  document.getElementById('spread-modal-bg').style.display = 'none';
+}
+async function doSpread() {
+  const days = parseInt(document.getElementById('spread-days').value) || 30;
+  if (!confirm('Spread all ' + days + '-day window from today? This resets everyone\'s due date.')) return;
+  await api('/api/friends/spread', { method: 'POST', body: { window_days: days } });
+  closeSpreadModal();
+  await loadFriends();
+  await loadQueueStats();
+}
 
 async function loadFriends() {
   const data = await api('/api/friends');
   const c = data.counts;
   document.getElementById('queue-badge').innerHTML =
-    '<span class="overdue">' + c.overdue + ' OVERDUE</span> · '
+    (c.overdue ? '<span class="overdue">' + c.overdue + ' OVERDUE</span> · ' : '')
     + '<span class="dueweek">' + c.due_this_week + ' DUE THIS WEEK</span>';
 
+  // Split active queue from done-this-cycle
+  const activeFriends = data.friends.filter(f => f.phase !== 'DONE');
+  const doneFriends = data.friends.filter(f => f.phase === 'DONE');
+
   let html = '';
-  for (const f of data.friends) {
+  for (const f of activeFriends) {
     let rowClass = 'friend-row';
     if (f.phase === 'SCHEDULED') rowClass += ' phase-scheduled';
-    if (f.phase === 'DONE') rowClass += ' phase-done';
     if (f.overdue_days) rowClass += ' overdue';
 
-    const phaseClass = f.phase === 'TO_SCHEDULE' ? 'to-schedule'
-      : f.phase === 'SCHEDULED' ? 'scheduled' : 'done';
-    const phaseLabel = f.phase.replace('_', ' ');
+    // mode badge
+    const mode = f.contact_mode || 'CALL';
+    const modeClass = mode === 'LUNCH' ? 'lunch' : (mode === 'EITHER' ? 'either' : '');
+    const modeBadge = '<span class="friend-mode-badge ' + modeClass + '">' + mode + '</span>';
 
-    let action = '';
+    // next step
+    const na = f.next_action;
+    const nextHtml = '<span class="friend-next-step ' + na.urgency + '">→ ' + esc(na.text) + '</span>';
+
+    // dates
+    const lastStr = f.last_done_at
+      ? 'last ' + new Date(f.last_done_at).toLocaleDateString('en-US', {month:'short',day:'numeric'})
+      : 'never';
+    const dueStr = f.due_date ? ' · due ' + f.due_date.slice(5) : '';
+
+    // action button (DONE contacts are in the collapsed section, not here)
+    let actionBtn = '';
     if (f.phase === 'TO_SCHEDULE') {
-      action = '<button onclick="advanceFriend(' + f.id + ',\'SCHEDULE\')">'
-        + (f.type === 'LOCAL' ? 'CALL+LUNCH' : 'CALL') + '</button>';
+      const label = mode === 'LUNCH' ? 'CALLED ✓' : 'DONE ✓';
+      actionBtn = '<button onclick="advanceFriend(' + f.id + ')">' + label + '</button>';
     } else if (f.phase === 'SCHEDULED') {
-      action = '<button onclick="advanceFriend(' + f.id + ',\'DONE\')">DONE ✓</button>';
-    } else {
-      action = '<button class="dim" onclick="resetFriend(' + f.id + ')">RESET</button>';
+      actionBtn = '<button onclick="advanceFriend(' + f.id + ')">DONE ✓</button>';
     }
 
-    const lastDone = f.last_done_at
-      ? 'last: ' + new Date(f.last_done_at).toLocaleDateString() : 'never contacted';
-    const due = f.due_date ? ' · due ' + f.due_date : '';
-
     html += '<div class="' + rowClass + '">'
+      // ▲▼ ordering
+      + '<div class="friend-rank">'
+      + '<button class="dim" onclick="moveFriend(' + f.id + ',\'up\')">▲</button>'
+      + '<button class="dim" onclick="moveFriend(' + f.id + ',\'down\')">▼</button>'
+      + '</div>'
+      // main info (click = toggle history)
       + '<div class="friend-info" onclick="toggleHistory(' + f.id + ')">'
-      + '<div class="friend-name">' + esc(f.name)
-      + (f.overdue_days ? '<span class="od-badge">+' + f.overdue_days + 'd OVERDUE</span>' : '')
-      + (f.aging ? '<span class="aging-badge">AGING</span>' : '') + '</div>'
-      + '<div class="friend-meta">'
-      + '<span class="friend-type-badge' + (f.type === 'LOCAL' ? ' local' : '') + '">' + f.type + '</span>'
-      + '<span class="friend-phase ' + phaseClass + '">' + phaseLabel + '</span>'
-      + '<span class="friend-due">' + lastDone + due + '</span>'
+      + '<div class="friend-name">'
+      + esc(f.name) + modeBadge
+      + (f.overdue_days ? '<span class="od-badge">+' + f.overdue_days + 'd</span>' : '')
       + '</div>'
-      + '<div class="friend-next ' + f.next_action.urgency + '">→ ' + esc(f.next_action.text) + '</div>'
-      + (f.static_note ? '<div class="friend-note">' + esc(f.static_note) + '</div>' : '')
+      + '<div class="friend-compact">'
+      + nextHtml
+      + '<span class="friend-dates">' + lastStr + dueStr + '</span>'
       + '</div>'
+      + (f.static_note ? '<div class="friend-static-note">' + esc(f.static_note) + '</div>' : '')
+      + '</div>'
+      // actions
       + '<div class="friend-actions">'
-      + '<button class="dim" onclick="toggleType(' + f.id + ',\'' + f.type + '\')">'
-      + (f.type === 'LOCAL' ? '→PHONE' : '→LOCAL') + '</button>'
-      + action
-      + '<button class="danger" onclick="archiveFriend(' + f.id + ',\'' + esc(f.name) + '\')">🗑</button>'
+      + actionBtn
+      + '<button class="dim" onclick="requeueFriend(' + f.id + ')" title="They reached out — restart cycle">↺</button>'
+      + '<button class="dim" onclick="addFriendNote(' + f.id + ')" title="Add a note">✎</button>'
+      + '<button class="dim" onclick="openEditFriend(' + f.id + ',\'' + esc(f.name) + '\')">EDIT</button>'
+      + '<button class="danger" onclick="archiveFriend(' + f.id + ',\'' + esc(f.name) + '\')">✕</button>'
       + '</div></div>';
+
     if (openHistoryId === f.id) {
       html += '<div class="friend-history" id="hist-' + f.id + '">loading…</div>';
     }
+    if (openEditId === f.id) {
+      html += friendEditPanel(f);
+    }
   }
+  // Collapsed "Done this cycle" section
+  if (doneFriends.length > 0) {
+    html += '<details style="margin-top:10px;">'
+      + '<summary style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--muted);cursor:pointer;padding:6px 0;">'
+      + 'DONE THIS CYCLE (' + doneFriends.length + ')</summary>';
+    for (const f of doneFriends) {
+      const nxt = f.due_date ? ' · next up ' + f.due_date.slice(5) : '';
+      html += '<div class="friend-row phase-done">'
+        + '<div class="friend-info">'
+        + '<div class="friend-name">' + esc(f.name)
+        + '<span class="friend-mode-badge ' + (f.contact_mode === 'LUNCH' ? 'lunch' : '') + '">' + (f.contact_mode || 'CALL') + '</span></div>'
+        + '<div class="friend-compact"><span class="friend-next-step rest">✓ cycle complete' + nxt + '</span></div>'
+        + '</div>'
+        + '<div class="friend-actions">'
+        + '<button class="dim" onclick="resetFriend(' + f.id + ')" title="Restart cycle early">RESET</button>'
+        + '</div></div>';
+    }
+    html += '</details>';
+  }
+
   document.getElementById('friends-list').innerHTML = html;
   if (openHistoryId) renderHistory(openHistoryId);
 }
 
+function friendEditPanel(f) {
+  return '<div class="friend-edit-panel" id="edit-' + f.id + '">'
+    + '<div class="form-row"><label class="form-label">NAME</label>'
+    + '<input type="text" class="form-input" id="ep-name-' + f.id + '" value="' + esc(f.name) + '"></div>'
+    + '<div class="form-row"><label class="form-label">CONTACT TYPE</label>'
+    + '<select class="form-input" id="ep-type-' + f.id + '">'
+    + '<option value="PHONE"' + (f.type==='PHONE'?' selected':'') + '>PHONE</option>'
+    + '<option value="LOCAL"' + (f.type==='LOCAL'?' selected':'') + '>LOCAL</option>'
+    + '</select></div>'
+    + '<div class="form-row"><label class="form-label">MEETING MODE</label>'
+    + '<select class="form-input" id="ep-mode-' + f.id + '">'
+    + '<option value="CALL"' + (f.contact_mode==='CALL'?' selected':'') + '>CALL</option>'
+    + '<option value="LUNCH"' + (f.contact_mode==='LUNCH'?' selected':'') + '>LUNCH</option>'
+    + '<option value="EITHER"' + (f.contact_mode==='EITHER'?' selected':'') + '>EITHER</option>'
+    + '</select></div>'
+    + '<div class="form-row"><label class="form-label">CADENCE (DAYS)</label>'
+    + '<input type="number" class="form-input" id="ep-cadence-' + f.id + '" value="' + f.cadence_days + '" min="1"></div>'
+    + '<div class="form-row"><label class="form-label">CALL-AHEAD DAYS</label>'
+    + '<input type="number" class="form-input" id="ep-advance-' + f.id + '" value="' + f.advance_days + '" min="1"></div>'
+    + '<div class="form-row"><label class="form-label">NOTE (shows on row)</label>'
+    + '<input type="text" class="form-input" id="ep-note-' + f.id + '" value="' + esc(f.static_note||'') + '"></div>'
+    + '<div class="friend-edit-actions">'
+    + '<button onclick="saveEditFriend(' + f.id + ')">SAVE</button>'
+    + '<button class="dim" onclick="openEditId=null;loadFriends()">CANCEL</button>'
+    + '</div></div>';
+}
+
 async function toggleHistory(id) {
-  openHistoryId = openHistoryId === id ? null : id;
+  if (openHistoryId === id) {
+    openHistoryId = null;
+  } else {
+    openHistoryId = id;
+    openEditId = null;
+  }
   await loadFriends();
 }
 async function renderHistory(id) {
   const el = document.getElementById('hist-' + id);
   if (!el) return;
   const hist = await api('/api/friends/' + id + '/history');
-  el.innerHTML = hist.length === 0
+  el.innerHTML = (hist.length === 0
     ? '<div class="hist-row">No contact history yet.</div>'
     : hist.map(h => '<div class="hist-row">'
         + '<span class="h-date">' + new Date(h.created_at).toLocaleDateString() + '</span>'
         + '<span class="h-action">' + h.action + '</span>'
-        + esc(h.note || '') + '</div>').join('');
+        + esc(h.note || '') + '</div>').join(''))
+    + '<div style="margin-top:8px;">'
+    + '<button class="dim" onclick="addFriendNote(' + id + ')">+ ADD NOTE</button></div>';
 }
 
-async function advanceFriend(id, kind) {
-  const note = await askNote(kind === 'SCHEDULE' ? 'SCHEDULE — NOTE' : 'MARK DONE — NOTE');
+async function advanceFriend(id) {
+  const note = await askNote('ADD A NOTE (OPTIONAL)');
   if (note === null) return;
   await api('/api/friends/' + id + '/advance', { method: 'POST', body: { note: note } });
   await loadFriends();
@@ -1128,9 +2338,37 @@ async function resetFriend(id) {
   await api('/api/friends/' + id + '/reset', { method: 'POST', body: {} });
   await loadFriends();
 }
-async function toggleType(id, cur) {
-  await api('/api/friends/' + id, { method: 'PATCH',
-    body: { type: cur === 'LOCAL' ? 'PHONE' : 'LOCAL' } });
+async function requeueFriend(id) {
+  const note = await askNote('THEY REACHED OUT — NOTE (OPTIONAL)');
+  if (note === null) return;
+  await api('/api/friends/' + id + '/requeue', { method: 'POST', body: { note: note } });
+  await loadFriends();
+}
+async function addFriendNote(id) {
+  const note = await askNote('ADD NOTE FOR THIS CONTACT');
+  if (!note) return;
+  await api('/api/friends/' + id + '/note', { method: 'POST', body: { note: note } });
+  if (openHistoryId === id) await renderHistory(id);
+}
+async function moveFriend(id, dir) {
+  await api('/api/friends/' + id + '/move', { method: 'POST', body: { direction: dir } });
+  await loadFriends();
+}
+function openEditFriend(id) {
+  openEditId = openEditId === id ? null : id;
+  openHistoryId = null;
+  loadFriends();
+}
+async function saveEditFriend(id) {
+  await api('/api/friends/' + id, { method: 'PATCH', body: {
+    name: document.getElementById('ep-name-' + id).value.trim(),
+    type: document.getElementById('ep-type-' + id).value,
+    contact_mode: document.getElementById('ep-mode-' + id).value,
+    cadence_days: parseInt(document.getElementById('ep-cadence-' + id).value) || 30,
+    advance_days: parseInt(document.getElementById('ep-advance-' + id).value) || 21,
+    static_note: document.getElementById('ep-note-' + id).value.trim(),
+  }});
+  openEditId = null;
   await loadFriends();
 }
 async function archiveFriend(id, name) {
@@ -1138,26 +2376,49 @@ async function archiveFriend(id, name) {
   await api('/api/friends/' + id, { method: 'DELETE' });
   await loadFriends();
 }
-async function addFriend() {
-  const name = document.getElementById('new-friend-name').value.trim();
+
+// Add Friend Modal
+function openAddFriendModal() {
+  document.getElementById('fm-id').value = '';
+  document.getElementById('fm-name').value = '';
+  document.getElementById('fm-type').value = 'PHONE';
+  document.getElementById('fm-mode').value = 'CALL';
+  document.getElementById('fm-cadence').value = '30';
+  document.getElementById('fm-advance').value = '21';
+  document.getElementById('fm-note').value = '';
+  document.getElementById('fm-advance-row').style.display = 'none';
+  document.getElementById('friend-modal-title').textContent = 'ADD CONTACT';
+  document.getElementById('friend-modal-bg').style.display = 'flex';
+  setTimeout(() => document.getElementById('fm-name').focus(), 50);
+}
+function closeFriendModal() {
+  document.getElementById('friend-modal-bg').style.display = 'none';
+}
+function fmModeChange() {
+  const mode = document.getElementById('fm-mode').value;
+  document.getElementById('fm-advance-row').style.display = mode === 'LUNCH' ? 'block' : 'none';
+}
+async function saveFriendModal() {
+  const name = document.getElementById('fm-name').value.trim();
   if (!name) return;
-  const type = document.querySelector('input[name="new-friend-type"]:checked').value;
   await api('/api/friends', { method: 'POST', body: {
-    name: name, type: type,
-    cadence_days: parseInt(document.getElementById('new-friend-cadence').value) || 30,
-    static_note: document.getElementById('new-friend-note').value.trim(),
+    name: name,
+    type: document.getElementById('fm-type').value,
+    contact_mode: document.getElementById('fm-mode').value,
+    cadence_days: parseInt(document.getElementById('fm-cadence').value) || 30,
+    advance_days: parseInt(document.getElementById('fm-advance').value) || 21,
+    static_note: document.getElementById('fm-note').value.trim(),
   }});
-  document.getElementById('new-friend-name').value = '';
-  document.getElementById('new-friend-note').value = '';
+  closeFriendModal();
   await loadFriends();
 }
 
 // ════════════════════════════════════════════════════════
-// MODULE 4 — LORI'S PRIORITIES (orderable)
+// MODULE 4 — VIP PRIORITIES (orderable)
 // ════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('lori-recur').addEventListener('change', e => {
-    document.getElementById('lori-recur-days').style.display =
+  document.getElementById('vip-recur').addEventListener('change', e => {
+    document.getElementById('vip-recur-days').style.display =
       e.target.value === 'custom' ? 'inline-block' : 'none';
   });
 });
@@ -1200,7 +2461,7 @@ async function loadTodos(list) {
 
 async function moveTodo(id, direction) {
   await api('/api/todos/' + id + '/move', { method: 'POST', body: { direction: direction } });
-  await loadTodos('lori');
+  await loadTodos('vip');
 }
 
 async function addTodo(list) {
@@ -1241,11 +2502,14 @@ async function clearCompleted(list) {
 // ════════════════════════════════════════════════════════
 async function init() {
   try {
+    initColorPickers();
     await loadToday();
-    await loadWeek();
+    await loadProjectTracker();   // projects view is default
+    await loadWeek();             // keep domain data fresh for rollup
     await loadProjects();
     await loadFriends();
-    await loadTodos('lori');
+    await loadQueueStats();
+    await loadTodos('vip');
   } catch (e) {
     console.error('init failed:', e);
   }

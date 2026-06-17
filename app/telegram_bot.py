@@ -130,16 +130,16 @@ async def _cmd_schedule(update, context):
 
 
 async def _cmd_add(update, context):
-    """/add Schedule dentist   (or legacy: /add lori Schedule dentist)"""
+    """/add Schedule dentist   (or legacy: /add vip Schedule dentist)"""
     if not _authorized(update):
         return
     args = list(context.args or [])
     if args and args[0].lower() == "house":
         await update.message.reply_text(
-            "Housekeeping is retired — everything lives in Lori's Priorities now. "
+            "Housekeeping is retired — everything lives in VIP Priorities now. "
             "Use /add <text>.")
         return
-    if args and args[0].lower() == "lori":
+    if args and args[0].lower() in ("vip", "lori"):
         args = args[1:]
     if not args:
         await update.message.reply_text("Usage: /add <text>")
@@ -148,8 +148,8 @@ async def _cmd_add(update, context):
     db = SessionLocal()
     try:
         from .routers.todos import _next_sort_order
-        db.add(Todo(list_id="lori", text=text,
-                    sort_order=_next_sort_order(db, "lori")))
+        db.add(Todo(list_id="vip", text=text,
+                    sort_order=_next_sort_order(db, "vip")))
         db.commit()
         await update.message.reply_text(f"✓ Added to PRIORITIES: {text}")
     finally:
@@ -160,7 +160,7 @@ async def _cmd_check(update, context):
     """/check 1 — mark priority #1 (as numbered in /brief) done."""
     if not _authorized(update):
         return
-    args = [a for a in (context.args or []) if a.lower() not in ("lori", "house")]
+    args = [a for a in (context.args or []) if a.lower() not in ("vip", "lori", "house")]
     if not args:
         await update.message.reply_text("Usage: /check <number>")
         return
@@ -172,7 +172,7 @@ async def _cmd_check(update, context):
     db = SessionLocal()
     try:
         items = (db.query(Todo)
-                 .filter(Todo.list_id == "lori", Todo.active == True,  # noqa: E712
+                 .filter(Todo.list_id == "vip", Todo.active == True,  # noqa: E712
                          Todo.done == False).all())  # noqa: E712
         items.sort(key=lambda t: t.sort_order)
         if not 1 <= n <= len(items):

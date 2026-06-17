@@ -1,4 +1,6 @@
 """Projects + Diary API."""
+import re
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import func
@@ -9,6 +11,16 @@ from ..models import DiaryEntry, Domain, Project
 
 router = APIRouter(prefix="/api", tags=["projects"])
 
+_HEX_RE = re.compile(r'^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$')
+
+
+def _validate_color(color: str | None) -> str | None:
+    if color is None:
+        return None
+    if not _HEX_RE.match(color):
+        raise HTTPException(400, "accent_color must be a valid hex color (#RGB or #RRGGBB)")
+    return color
+
 
 def project_payload(p: Project, entry_count: int) -> dict:
     return {
@@ -17,6 +29,9 @@ def project_payload(p: Project, entry_count: int) -> dict:
         "domain_key": p.domain.key if p.domain else None,
         "accent_color": p.accent_color, "note": p.note,
         "status": p.status, "sort_order": p.sort_order,
+        "category": (getattr(p, "category", None) or "WORK"),
+        "check_in_days": (getattr(p, "check_in_days", None) if getattr(p, "check_in_days", None) is not None else 14),
+        "goal_pct": getattr(p, "goal_pct", 0) or 0,
         "entry_count": entry_count,
     }
 
@@ -26,6 +41,9 @@ class ProjectCreate(BaseModel):
     domain_key: str | None = None
     accent_color: str = "#FF8800"
     note: str = ""
+    category: str = "WORK"
+    check_in_days: int = 14
+    goal_pct: int = 0
 
 
 class ProjectPatch(BaseModel):
@@ -35,6 +53,9 @@ class ProjectPatch(BaseModel):
     note: str | None = None
     status: str | None = None
     sort_order: int | None = None
+    category: str | None = None
+    check_in_days: int | None = None
+    goal_pct: int | None = None
 
 
 class EntryCreate(BaseModel):
@@ -47,7 +68,9 @@ def list_projects(db: Session = Depends(get_db)):
         db.query(DiaryEntry.project_id, func.count(DiaryEntry.id))
         .group_by(DiaryEntry.project_id).all()
     )
-    projects = db.query(Project).order_by(Project.sort_order).all()
+    projects = (db.query(Project)
+                .filter(Project.status != "DELETED")
+                .order_by(Project.sort_order).all())
     return [project_payload(p, counts.get(p.id, 0)) for p in projects]
 
 
@@ -65,8 +88,11 @@ def create_project(body: ProjectCreate, db: Session = Depends(get_db)):
         if not d:
             raise HTTPException(404, f"unknown domain {body.domain_key}")
         domain_id = d.id
+    category = body.category if body.category in ("WORK", "RESEARCH", "BACKLOG") else "WORK"
     p = Project(key=key, name=name, domain_id=domain_id,
-                accent_color=body.accent_color, note=body.note,
+                accent_color=_validate_color(body.accent_color), note=body.note,
+                category=category, check_in_days=body.check_in_days,
+                goal_pct=body.goal_pct,
                 sort_order=db.query(Project).count())
     db.add(p)
     db.commit()
@@ -78,14 +104,16 @@ def patch_project(project_id: int, body: ProjectPatch, db: Session = Depends(get
     p = db.get(Project, project_id)
     if not p:
         raise HTTPException(404, "project not found")
-    if body.status is not None and body.status not in ("ACTIVE", "PAUSED", "DONE"):
-        raise HTTPException(400, "status must be ACTIVE/PAUSED/DONE")
+    if body.status is not None and body.status not in ("ACTIVE", "PAUSED", "DONE", "DELETED"):
+        raise HTTPException(400, "status must be ACTIVE/PAUSED/DONE/DELETED")
+    if body.accent_color is not None:
+        body.accent_color = _validate_color(body.accent_color)
     if body.domain_key is not None:
         d = db.query(Domain).filter(Domain.key == body.domain_key.upper()).first()
         if not d:
             raise HTTPException(404, f"unknown domain {body.domain_key}")
         p.domain_id = d.id
-    for field in ("name", "accent_color", "note", "status", "sort_order"):
+    for field in ("name", "accent_color", "note", "status", "sort_order", "category", "check_in_days", "goal_pct"):
         v = getattr(body, field)
         if v is not None:
             setattr(p, field, v)

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import DailyLog, Domain
+from ..models import DailyLog, Domain, Project, ProjectLog
 
 router = APIRouter(prefix="/api", tags=["log"])
 
@@ -20,7 +20,9 @@ def week_start(offset: int = 0) -> date:
 def domain_payload(d: Domain) -> dict:
     return {
         "id": d.id, "key": d.key, "label": d.label,
-        "weekly_goal": d.weekly_goal, "sort_order": d.sort_order,
+        "weekly_goal": d.weekly_goal,
+        "goal_pct": getattr(d, "goal_pct", 0) or 0,
+        "sort_order": d.sort_order,
         "active": d.active,
     }
 
@@ -36,6 +38,7 @@ class DomainCreate(BaseModel):
 class DomainPatch(BaseModel):
     label: str | None = None
     weekly_goal: int | None = None
+    goal_pct: int | None = None
     sort_order: int | None = None
     active: bool | None = None
 
@@ -66,7 +69,7 @@ def patch_domain(domain_id: int, body: DomainPatch, db: Session = Depends(get_db
     d = db.get(Domain, domain_id)
     if not d:
         raise HTTPException(404, "domain not found")
-    for field in ("label", "weekly_goal", "sort_order", "active"):
+    for field in ("label", "weekly_goal", "goal_pct", "sort_order", "active"):
         v = getattr(body, field)
         if v is not None:
             setattr(d, field, v)
@@ -101,6 +104,19 @@ def get_week(offset: int = 0, db: Session = Depends(get_db)):
         key = by_id.get(r.domain_id)
         if key:
             col_totals[key] += r.hours
+
+    # Roll up project_log hours into domain totals
+    proj_rows = (db.query(ProjectLog)
+                 .join(Project, ProjectLog.project_id == Project.id)
+                 .filter(ProjectLog.date >= start, ProjectLog.date <= days[-1]).all())
+    domain_by_proj = {}
+    for p in db.query(Project).filter(Project.domain_id.isnot(None)).all():
+        domain_by_proj[p.id] = by_id.get(p.domain_id)
+    for r in proj_rows:
+        key = domain_by_proj.get(r.project_id)
+        if key:
+            col_totals[key] += r.hours
+
     return {
         "week_start": start.isoformat(),
         "days": [d.isoformat() for d in days],

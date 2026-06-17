@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from .models import Domain, Friend, Project
 
 DEFAULT_DOMAINS = [
-    ("CODING", "Coding"), ("ROBOT", "Robot"), ("ART", "Art"), ("MTB", "Mtb"),
+    ("CODING", "Coding"), ("ROBOT", "Robot"), ("ART", "Art"), ("EXERCISE", "Exercise"),
     ("SOCIAL", "Social"), ("CIVIC", "Civic"), ("FIN", "Fin"), ("GAMING", "Gaming"),
-    ("LORI", "Lori"), ("HOUSE", "House"),
+    ("VIP", "VIP"), ("HOUSE", "House"),
 ]
 
 DEFAULT_FRIENDS = [
@@ -32,6 +32,10 @@ DEFAULT_PROJECTS = [
     ("intel", "Intelligence", "CODING", "#1E6E62", "RSS pipeline"),
     ("dnd", "D&D Server", "CODING", "#1E6E62", "Local · Portainer"),
     ("robot", "Robot", "ROBOT", "#3A6EA5", "Code lab · starting"),
+    ("mtb", "MTB / Biking", "EXERCISE", "#5C7C2F", "Mountain biking + road"),
+    ("pumping-iron", "Pumping Iron", "EXERCISE", "#5C7C2F", "Weight training"),
+    ("swimming", "Swimming", "EXERCISE", "#5C7C2F", ""),
+    ("walking", "Walking", "EXERCISE", "#5C7C2F", ""),
     ("ocparks", "OC Parks", "CIVIC", "#B07D10", "E-bike campaign"),
     ("finance", "Planning", "FIN", "#8A5A2B", "Roth + Scholarship"),
 ]

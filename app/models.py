@@ -15,6 +15,7 @@ class Domain(Base):
     key: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     label: Mapped[str] = mapped_column(String, nullable=False)
     weekly_goal: Mapped[int] = mapped_column(Integer, default=0)
+    goal_pct: Mapped[int] = mapped_column(Integer, default=0)  # target % of total logged hours
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
@@ -43,6 +44,9 @@ class Project(Base):
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
+    category: Mapped[str] = mapped_column(String, default="WORK")  # WORK/RESEARCH
+    check_in_days: Mapped[int] = mapped_column(Integer, default=14)  # 0 = aperiodic, never nag
+    goal_pct: Mapped[int] = mapped_column(Integer, default=0)  # target % of total logged hours (0 = no goal)
     domain: Mapped[Domain | None] = relationship()
     entries: Mapped[list["DiaryEntry"]] = relationship(back_populates="project")
 
@@ -63,6 +67,9 @@ class Friend(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     type: Mapped[str] = mapped_column(String, default="PHONE")  # PHONE/LOCAL
     phase: Mapped[str] = mapped_column(String, default="TO_SCHEDULE")  # TO_SCHEDULE/SCHEDULED/DONE
+    contact_mode: Mapped[str] = mapped_column(String, default="CALL")  # CALL/LUNCH/EITHER
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    advance_days: Mapped[int] = mapped_column(Integer, default=21)  # for LUNCH: call to schedule this many days before target
     static_note: Mapped[str] = mapped_column(Text, default="")
     cadence_days: Mapped[int] = mapped_column(Integer, default=30)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -84,10 +91,21 @@ class ContactHistory(Base):
     friend: Mapped[Friend] = relationship(back_populates="history")
 
 
+class ProjectLog(Base):
+    __tablename__ = "project_log"
+    __table_args__ = (UniqueConstraint("date", "project_id"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), nullable=False)
+    hours: Mapped[int] = mapped_column(Integer, default=0)
+
+    project: Mapped[Project] = relationship()
+
+
 class Todo(Base):
     __tablename__ = "todos"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    list_id: Mapped[str] = mapped_column(String, nullable=False)  # 'lori' / 'house'
+    list_id: Mapped[str] = mapped_column(String, nullable=False)  # 'vip' / 'house'
     text: Mapped[str] = mapped_column(Text, nullable=False)
     done: Mapped[bool] = mapped_column(Boolean, default=False)
     done_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

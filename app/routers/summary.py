@@ -34,7 +34,7 @@ def get_summary(db: Session = Depends(get_db)):
 
     todos_today = (db.query(Todo)
                    .filter(Todo.active == True, Todo.done == False,  # noqa: E712
-                           Todo.list_id == "lori",
+                           Todo.list_id == "vip",
                            Todo.due_date != None, Todo.due_date <= today)  # noqa: E711
                    .all())
 

@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from .models import DailyLog, DiaryEntry, Domain, Friend, Project, Todo
+from .models import DailyLog, DiaryEntry, Domain, Friend, Project, ProjectLog, Todo
 from .routers.social import next_action
 
 STALE_PROJECT_DAYS = 14  # ACTIVE project with no diary entry for this long = getting behind
@@ -47,6 +47,22 @@ def build_brief_data(db: Session) -> dict:
         if k:
             recent[k] += r.hours
 
+    # Roll up project_log hours into week + recent domain totals
+    dom_by_proj: dict[int, str] = {}
+    for p in db.query(Project).filter(Project.domain_id.isnot(None)).all():
+        k = by_id.get(p.domain_id)
+        if k:
+            dom_by_proj[p.id] = k
+    for pr in db.query(ProjectLog).filter(ProjectLog.date >= start).all():
+        k = dom_by_proj.get(pr.project_id)
+        if k:
+            week[k] += pr.hours
+    for pr in (db.query(ProjectLog)
+               .filter(ProjectLog.date >= two_weeks_ago, ProjectLog.date < start).all()):
+        k = dom_by_proj.get(pr.project_id)
+        if k:
+            recent[k] += pr.hours
+
     domain_lines = [{
         "key": d.key, "hours": week[d.key], "goal": d.weekly_goal,
         "dormant": week[d.key] == 0 and recent[d.key] == 0,
@@ -57,17 +73,33 @@ def build_brief_data(db: Session) -> dict:
     last_entry = dict(
         db.query(DiaryEntry.project_id, func.max(DiaryEntry.created_at))
         .group_by(DiaryEntry.project_id).all())
+
     stale_projects = []
+    research_projects = []
     for p in db.query(Project).filter(Project.status == "ACTIVE").all():
         last = last_entry.get(p.id) or p.created_at
         days = (datetime.now() - last).days
-        if days >= STALE_PROJECT_DAYS:
-            stale_projects.append({
+        check_in = getattr(p, "check_in_days", 14) or 14
+        category = getattr(p, "category", "WORK") or "WORK"
+
+        if category == "RESEARCH":
+            research_projects.append({
                 "id": p.id, "name": p.name,
                 "domain_key": p.domain.key if p.domain else None,
                 "days_quiet": days,
+                "note": p.note,
             })
+        else:
+            # check_in_days = 0 means aperiodic — never nag
+            if check_in > 0 and days >= check_in:
+                stale_projects.append({
+                    "id": p.id, "name": p.name,
+                    "domain_key": p.domain.key if p.domain else None,
+                    "days_quiet": days,
+                })
+
     stale_projects.sort(key=lambda x: -x["days_quiet"])
+    research_projects.sort(key=lambda x: -x["days_quiet"])
 
     # ── social CRM: steps due ────────────────────────────
     friends = db.query(Friend).filter(Friend.active == True).all()  # noqa: E712
@@ -88,9 +120,9 @@ def build_brief_data(db: Session) -> dict:
                 "note": f.static_note,
                 "next_action": next_action(f, od)}
 
-    # ── Lori's Priorities ────────────────────────────────
+    # ── VIP Priorities ───────────────────────────────────
     pri_items = (db.query(Todo)
-                 .filter(Todo.list_id == "lori", Todo.active == True,  # noqa: E712
+                 .filter(Todo.list_id == "vip", Todo.active == True,  # noqa: E712
                          Todo.done == False).all())  # noqa: E712
     pri_items.sort(key=lambda t: t.sort_order)
     priorities = [{
@@ -123,9 +155,6 @@ def build_brief_data(db: Session) -> dict:
     for dl in behind:
         agenda.append({"kind": "domain", "urgency": "behind",
                        "text": f"{dl['key']}: {dl['hours']}h of {dl['goal']}h weekly goal"})
-    for sp in stale_projects[:3]:
-        agenda.append({"kind": "project", "urgency": "stale",
-                       "text": f"{sp['name']} has been quiet {sp['days_quiet']}d — touch it today"})
     for dl in domain_lines:
         if dl["dormant"] and not dl["behind_goal"]:
             agenda.append({"kind": "domain", "urgency": "dormant",
@@ -142,6 +171,7 @@ def build_brief_data(db: Session) -> dict:
         "agenda": agenda,
         "priorities": priorities,
         "stale_projects": stale_projects,
+        "research_projects": research_projects,
         "social": {
             "overdue": [social_step(f) for f in overdue],
             "due_this_week": [social_step(f) for f in due_week],
@@ -192,7 +222,7 @@ def format_brief_text(data: dict) -> str:
         lines.append("  Queue clear — all relationships on plan.")
     lines.append("")
 
-    lines.append("📋 LORI'S PRIORITIES")
+    lines.append("📋 VIP PRIORITIES")
     if not data["priorities"]:
         lines.append("  Nothing open.")
     for t in data["priorities"][:6]:
