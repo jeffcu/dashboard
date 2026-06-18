@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Board — Goal Manager</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap');
+
+:root {
+  --paper:    #F7F2EA;
+  --card:     #FFFFFF;
+  --line:     #E3D9C8;
+  --ink:      #221C14;
+  --body:     #3D3528;
+  --muted:    #8A7D6A;
+  --faint:    #B5A892;
+  --orange:   #C44A18;
+  --orange-d: #A23C12;
+  --teal:     #1E6E62;
+  --olive:    #5C7C2F;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--body);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+a { color: var(--orange); text-decoration: none; }
+a:hover { color: var(--orange-d); text-decoration: underline; }
+
+/* ── NAV ── */
+nav {
+  background: var(--ink);
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-brand {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #FDFAF5;
+}
+.nav-brand span { color: var(--orange); }
+.nav-links { display: flex; gap: 28px; }
+.nav-links a {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--faint);
+  text-decoration: none;
+}
+.nav-links a:hover { color: #FDFAF5; text-decoration: none; }
+.nav-cta {
+  background: var(--orange);
+  color: #fff !important;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.nav-cta:hover { background: var(--orange-d) !important; }
+
+/* ── HERO ── */
+.hero {
+  background: var(--ink);
+  padding: 80px 40px 72px;
+  text-align: center;
+  border-bottom: 5px solid var(--orange);
+}
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--faint);
+  margin-bottom: 20px;
+}
+.hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(42px, 7vw, 72px);
+  font-weight: 800;
+  color: #FDFAF5;
+  line-height: 1.05;
+  margin-bottom: 8px;
+}
+.hero-title span { color: var(--orange); }
+.hero-subtitle {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+.hero-desc {
+  font-size: 17px;
+  color: #B5A892;
+  max-width: 600px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+}
+.hero-btns {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  transition: transform 0.1s, opacity 0.1s;
+}
+.btn:hover { transform: translateY(-1px); opacity: 0.92; text-decoration: none; }
+.btn-primary { background: var(--orange); color: #fff; }
+.btn-secondary { background: rgba(255,255,255,0.08); color: #FDFAF5; border: 1px solid rgba(255,255,255,0.15); }
+
+/* ── CLIENTS STRIP ── */
+.clients {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+.client-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.client-icon { font-size: 20px; }
+.client-divider { width: 1px; height: 24px; background: var(--line); }
+
+/* ── SECTION WRAPPER ── */
+.section { padding: 72px 40px; }
+.section-inner { max-width: 960px; margin: 0 auto; }
+.section-alt { background: var(--card); }
+
+.section-eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: var(--orange);
+  margin-bottom: 10px;
+}
+.section-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(26px, 4vw, 38px);
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 16px;
+  line-height: 1.15;
+}
+.section-body {
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 600px;
+  line-height: 1.7;
+  margin-bottom: 40px;
+}
+
+/* ── FEATURE GRID ── */
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.feat-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 22px 22px 24px;
+}
+.feat-icon { font-size: 24px; margin-bottom: 10px; }
+.feat-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.feat-body { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ── TAB DEMO ── */
+.tab-demo {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(34,28,20,0.08);
+}
+.tab-demo-bar {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 0;
+  padding: 0 20px;
+}
+.tab-pill {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+  cursor: default;
+}
+.tab-pill.active { color: var(--orange); border-bottom-color: var(--orange); }
+.tab-pill.teal.active { color: var(--teal); border-bottom-color: var(--teal); }
+.tab-pill.olive.active { color: var(--olive); border-bottom-color: var(--olive); }
+.tab-demo-body { padding: 24px; }
+
+/* fake heatmap */
+.hm-demo { display: grid; grid-template-columns: 44px repeat(5, 1fr) 32px; gap: 4px; font-size: 11px; }
+.hm-lbl { font-size: 10px; font-weight: 700; color: var(--muted); display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; }
+.hm-ch { font-size: 9px; font-weight: 800; color: var(--ink); text-align: center; padding-bottom: 4px; }
+.hm-c { height: 32px; border-radius: 5px; border: 1px solid rgba(34,28,20,0.06); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; }
+.hm-t { font-size: 10px; font-weight: 800; text-align: center; color: var(--muted); }
+.hm-t.met { color: #2E7D32; }
+
+/* ── BRIEFING DEMO ── */
+.brief-demo {
+  background: var(--ink);
+  border-radius: 10px;
+  padding: 24px 28px;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #B5A892;
+  white-space: pre;
+  overflow-x: auto;
+}
+.brief-demo .hi { color: #FDFAF5; font-weight: 700; }
+.brief-demo .acc { color: var(--orange); }
+.brief-demo .tl { color: #5BA898; }
+.brief-demo .gr { color: #5A9E5A; }
+.brief-demo .rd { color: #CC6666; }
+
+/* ── STACK GRID ── */
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.stack-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.stack-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+.stack-label { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 2px; }
+.stack-sub { font-size: 11px; color: var(--muted); }
+
+/* ── QUICKSTART ── */
+.qs-steps { display: flex; flex-direction: column; gap: 0; max-width: 640px; }
+.qs-step {
+  display: flex;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.qs-step:last-child { border-bottom: none; }
+.qs-num {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--line);
+  line-height: 1;
+  flex-shrink: 0;
+  width: 36px;
+  padding-top: 2px;
+}
+.qs-title { font-size: 14px; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
+.qs-body { font-size: 13px; color: var(--muted); line-height: 1.6; }
+code {
+  background: rgba(34,28,20,0.07);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: 'Menlo', monospace;
+  font-size: 12px;
+  color: var(--ink);
+}
+pre {
+  background: var(--ink);
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-family: 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #B5A892;
+  overflow-x: auto;
+  margin-top: 10px;
+}
+pre .c { color: #5BA898; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--ink);
+  border-top: 4px solid var(--orange);
+  padding: 40px;
+  text-align: center;
+}
+.footer-brand {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #FDFAF5;
+  margin-bottom: 10px;
+}
+.footer-brand span { color: var(--orange); }
+.footer-links { display: flex; gap: 24px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+.footer-links a { font-size: 12px; font-weight: 700; color: var(--muted); }
+.footer-links a:hover { color: #FDFAF5; text-decoration: none; }
+.footer-copy { font-size: 12px; color: var(--muted); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  nav { padding: 0 20px; }
+  .nav-links { display: none; }
+  .hero { padding: 56px 24px 48px; }
+  .section { padding: 52px 24px; }
+  .clients { gap: 20px; padding: 20px 24px; }
+  footer { padding: 32px 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">THE <span>BOARD</span></div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#quickstart">Quick Start</a>
+    <a href="#stack">Stack</a>
+    <a href="https://github.com/jeffcu/dashboard" class="nav-cta">GitHub →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">OPEN SOURCE · SELF-HOSTED · SINGLE DOCKER COMMAND</div>
+  <div class="hero-title">The <span>Board</span></div>
+  <div class="hero-subtitle">GOAL MANAGER</div>
+  <div class="hero-desc">
+    A personal life-balance dashboard that tracks how you invest your time,
+    surfaces what needs attention today, and keeps your relationships on plan —
+    across a web UI, a Telegram bot, and a macOS menu bar.
+  </div>
+  <div class="hero-btns">
+    <a href="#quickstart" class="btn btn-primary">Get Started →</a>
+    <a href="https://github.com/jeffcu/dashboard" class="btn btn-secondary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      View on GitHub
+    </a>
+  </div>
+</div>
+
+<!-- CLIENTS STRIP -->
+<div class="clients">
+  <div class="client-item"><span class="client-icon">🌐</span> Web Dashboard</div>
+  <div class="client-divider"></div>
+  <div class="client-item"><span class="client-icon">📱</span> Telegram Bot</div>
+  <div class="client-divider"></div>
+  <div class="client-item"><span class="client-icon">🍎</span> macOS Menu Bar</div>
+  <div class="client-divider"></div>
+  <div class="client-item"><span class="client-icon">⏰</span> 7:30am Daily Brief</div>
+</div>
+
+<!-- FEATURES -->
+<div class="section" id="features">
+  <div class="section-inner">
+    <div class="section-eyebrow">WHAT IT DOES</div>
+    <div class="section-title">Everything in one place,<br>nothing you don't need</div>
+    <div class="section-body">
+      Five focused modules, each solving a specific daily planning problem.
+      All data stays local — SQLite on your machine, volume-mounted so it
+      survives restarts and rebuilds.
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">🎯</div>
+        <div class="feat-title">TODAY — Morning Launchpad</div>
+        <div class="feat-body">Ordered agenda computed fresh each morning: overdue social steps → slipping priorities → goals behind → dormant domains. One focus card at the top tells you exactly where to start.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔥</div>
+        <div class="feat-title">Daily Log — Click Heatmap</div>
+        <div class="feat-body">Domain × day grid. Click a cell to add an hour. Hover for a − button. Color ramps paper to deep orange at 4h+. Column totals track both direct log and project time rolled up automatically.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📓</div>
+        <div class="feat-title">Diaries — Project Journals</div>
+        <div class="feat-body">Every project has a sticky journal panel. Domain-grouped cards with drag-to-reassign. Full-text search across all entries. 64-color accent picker keeps cards on-palette.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🤝</div>
+        <div class="feat-title">Keep in Touch</div>
+        <div class="feat-body">Every contact has a phase (TO_SCHEDULE → SCHEDULED → DONE) and a cadence. The system computes the next action due per contact and surfaces overdue relationships in the daily agenda.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⭐</div>
+        <div class="feat-title">VIP Priorities</div>
+        <div class="feat-body">A manually-ranked priority queue — not a todo list. Drag to reorder. Due dates, overdue flags, weekly recurrence. #1 is always your next move. Soft-delete preserves history.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">Goals Engine</div>
+        <div class="feat-body">Each domain carries a weekly hour goal and a % of total target. The underperformer engine computes gaps across week, month, and 8-week windows — surfaced on TODAY and in the morning brief.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS - TAB DEMO -->
+<div class="section section-alt" id="how-it-works">
+  <div class="section-inner">
+    <div class="section-eyebrow">THE DASHBOARD</div>
+    <div class="section-title">Five tabs, one workflow</div>
+    <div class="section-body">
+      The Workshop aesthetic — warm paper, ink, burnt orange, deep teal.
+      Designed for daylight readability and a little optimism.
+    </div>
+
+    <div class="tab-demo" style="margin-bottom:40px;">
+      <div class="tab-demo-bar">
+        <div class="tab-pill active">TODAY</div>
+        <div class="tab-pill">DAILY LOG</div>
+        <div class="tab-pill teal">DIARIES</div>
+        <div class="tab-pill teal">SOCIAL</div>
+        <div class="tab-pill olive">TODOS</div>
+      </div>
+      <div class="tab-demo-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div style="background:var(--orange);border-radius:8px;padding:16px;color:#fff;">
+            <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;opacity:0.75;margin-bottom:6px;">TODAY'S FOCUS</div>
+            <div style="font-size:13px;font-weight:700;line-height:1.4;">Call to schedule lunch — Mitch +3d past plan</div>
+          </div>
+          <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:16px;">
+            <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">VIP PRIORITIES</div>
+            <div style="font-size:12px;color:var(--body);line-height:1.8;">
+              <span style="font-weight:800;color:var(--orange);">1.</span> Pay quarterly taxes<br>
+              <span style="font-weight:800;color:var(--ink);">2.</span> Review insurance renewal<br>
+              <span style="font-weight:800;color:var(--ink);">3.</span> Schedule annual checkup
+            </div>
+          </div>
+          <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:16px;">
+            <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">BALANCE GOALS</div>
+            <div style="font-size:12px;color:var(--body);line-height:1.8;">
+              <span style="color:var(--red);font-weight:700;">↓</span> EXERCISE: 1h of 4h goal<br>
+              <span style="color:var(--amber);font-weight:700;">↓</span> ART: 2h of 6h goal<br>
+              <span style="color:var(--teal);font-weight:700;">✓</span> CODING: 9h — on track
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px;">
+          <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;">AGENDA</div>
+          <div style="display:flex;flex-direction:column;gap:7px;font-size:12px;">
+            <div style="display:flex;align-items:center;gap:10px;"><span style="background:#C62828;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;">OVERDUE</span><span>Call to schedule lunch — Mitch +3d past plan</span></div>
+            <div style="display:flex;align-items:center;gap:10px;"><span style="background:var(--amber);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;">TODAY</span><span>Due today: Pay quarterly taxes</span></div>
+            <div style="display:flex;align-items:center;gap:10px;"><span style="background:var(--teal);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;">BEHIND</span><span>EXERCISE: 1h of 4h weekly goal</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Briefing demo -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px;">Morning briefing — pushed to Telegram at 7:30am</div>
+        <div class="brief-demo"><span class="hi">📅 DAILY BRIEF — Tuesday Jun 17</span>
+
+<span class="acc">🎯 TODAY'S FOCUS</span>
+  Call to schedule lunch — Mitch +3d
+
+<span class="acc">📌 AGENDA</span>
+  <span class="rd">🔴</span> Call to schedule — Mitch +3d past plan
+  <span style="color:#B07D10;">🟠</span> Due today: Pay quarterly taxes
+  <span style="color:#5BA898;">⏱</span> EXERCISE: 1h of 4h weekly goal
+
+<span class="acc">⏱ THIS WEEK SO FAR</span>
+  CODING  <span class="gr">██████████</span>  9h / 10h goal
+  ART     <span style="color:#D97040;">████░░░░░░</span>  2h / 6h goal <span class="rd">⚠</span>
+  EXERCISE<span class="rd">█░░░░░░░░░</span>  1h / 4h goal <span class="rd">⚠</span>
+
+<span class="acc">📞 SOCIAL — STEPS DUE</span>
+  <span class="rd">🔴</span> Mitch: Call to schedule lunch (+3d)
+  <span class="tl">✅</span> Steve: Call on the books
+
+<span class="acc">📋 VIP PRIORITIES</span>
+  1. Pay quarterly taxes  <span class="rd">due today</span>
+  2. Review insurance renewal
+  3. Schedule annual checkup</div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px;">Daily log heatmap — click to add an hour</div>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;">
+          <div class="hm-demo">
+            <div></div>
+            <div class="hm-ch">MON</div><div class="hm-ch">TUE</div><div class="hm-ch">WED</div><div class="hm-ch">THU</div><div class="hm-ch" style="color:var(--orange);">FRI ←</div>
+            <div></div>
+            <div class="hm-lbl">CODING</div>
+            <div class="hm-c" style="background:#E8A87C;color:#7A4A12;">2</div>
+            <div class="hm-c" style="background:#D97040;color:#fff;">3</div>
+            <div class="hm-c" style="background:#E8A87C;color:#7A4A12;">2</div>
+            <div class="hm-c" style="background:#D97040;color:#fff;">3</div>
+            <div class="hm-c" style="background:#C44A18;color:#fff;box-shadow:inset 0 0 0 2px #fff;">1</div>
+            <div class="hm-t met">11</div>
+            <div class="hm-lbl">ART</div>
+            <div class="hm-c" style="background:#C44A18;color:#fff;">4</div>
+            <div class="hm-c" style="background:#F0D0B8;">1</div>
+            <div class="hm-c" style="background:#F7F2EA;border:1px solid var(--line);"></div>
+            <div class="hm-c" style="background:#F7F2EA;border:1px solid var(--line);"></div>
+            <div class="hm-c" style="background:#F7F2EA;border:1px solid var(--line);box-shadow:inset 0 0 0 2px #C44A18;"></div>
+            <div class="hm-t">5</div>
+            <div class="hm-lbl">EXERCISE</div>
+            <div class="hm-c" style="background:#F0D0B8;">1</div>
+            <div class="hm-c" style="background:#F7F2EA;border:1px solid var(--line);"></div>
+            <div class="hm-c" style="background:#F7F2EA;border:1px solid var(--line);"></div>
+            <div class="hm-c" style="background:#F7F2EA;border:1px solid var(--line);"></div>
+            <div class="hm-c" style="background:#F7F2EA;border:1px solid var(--line);box-shadow:inset 0 0 0 2px #C44A18;"></div>
+            <div class="hm-t" style="color:var(--red);">1</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px;">Telegram commands</div>
+        <div style="background:var(--ink);border-radius:8px;padding:14px 18px;font-family:monospace;font-size:12px;line-height:2;color:#B5A892;">
+          <span style="color:var(--orange);">/brief</span>       — full morning briefing<br>
+          <span style="color:var(--orange);">/log coding 2</span> — add 2h to Coding<br>
+          <span style="color:var(--orange);">/add</span> Pay taxes — add to VIP Priorities<br>
+          <span style="color:var(--orange);">/check 1</span>     — mark priority #1 done<br>
+          <span style="color:var(--orange);">/queue</span>       — social steps due
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK START -->
+<div class="section" id="quickstart">
+  <div class="section-inner">
+    <div class="section-eyebrow">GETTING STARTED</div>
+    <div class="section-title">Up in three commands</div>
+    <div class="section-body">
+      The only hard dependency is Docker Desktop. Everything else — the database,
+      the scheduler, the Telegram bot — starts inside the container.
+    </div>
+    <div class="qs-steps">
+      <div class="qs-step">
+        <div class="qs-num">1</div>
+        <div>
+          <div class="qs-title">Clone and configure</div>
+          <div class="qs-body">Copy <code>.env.example</code> to <code>.env</code> and fill in your Telegram bot token and user ID. Both are optional — the app runs without them, the bot just stays dormant.</div>
+          <pre><span class="c"># Clone</span>
+git clone https://github.com/jeffcu/dashboard.git
+cd dashboard
+cp .env.example .env</pre>
+        </div>
+      </div>
+      <div class="qs-step">
+        <div class="qs-num">2</div>
+        <div>
+          <div class="qs-title">Start the container</div>
+          <div class="qs-body">One command starts everything: the FastAPI server, the SQLite database, the scheduler, and the Telegram bot.</div>
+          <pre>docker compose up -d</pre>
+        </div>
+      </div>
+      <div class="qs-step">
+        <div class="qs-num">3</div>
+        <div>
+          <div class="qs-title">Open the dashboard</div>
+          <div class="qs-body">Navigate to <code>http://localhost:8765</code>. The TODAY tab loads your first morning agenda. Customize your domains in Daily Log → Domain Settings.</div>
+        </div>
+      </div>
+      <div class="qs-step">
+        <div class="qs-num">+</div>
+        <div>
+          <div class="qs-title">Optional: macOS menu bar</div>
+          <div class="qs-body">Install the xbar plugin for a live glance from your menu bar — week hours and social queue status, updated every minute.</div>
+          <pre>cp xbar/dashboard.1m.sh ~/.config/xbar/plugins/
+chmod +x ~/.config/xbar/plugins/dashboard.1m.sh</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STACK -->
+<div class="section section-alt" id="stack">
+  <div class="section-inner">
+    <div class="section-eyebrow">TECH STACK</div>
+    <div class="section-title">Simple by design</div>
+    <div class="section-body">
+      No Node.js build pipeline. No cloud dependencies. No authentication surface.
+      A single Docker container, a single SQLite file, a single HTML page.
+    </div>
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="stack-icon">🐍</div>
+        <div><div class="stack-label">FastAPI</div><div class="stack-sub">Async REST API + static file serving</div></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon">🗄</div>
+        <div><div class="stack-label">SQLite + SQLAlchemy</div><div class="stack-sub">Zero-ops, volume-mounted, survives restarts</div></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon">🐳</div>
+        <div><div class="stack-label">Docker</div><div class="stack-sub">Single-command start, no local Python needed</div></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon">📱</div>
+        <div><div class="stack-label">Telegram Bot</div><div class="stack-sub">Long-polling — no public URL or SSL required</div></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon">⏱</div>
+        <div><div class="stack-label">APScheduler</div><div class="stack-sub">In-process cron for the daily briefing push</div></div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon">📄</div>
+        <div><div class="stack-label">Vanilla JS + HTML</div><div class="stack-sub">Single file — edit and hard-refresh, no build step</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">THE <span>BOARD</span></div>
+  <div class="footer-links">
+    <a href="https://github.com/jeffcu/dashboard">GitHub</a>
+    <a href="https://github.com/jeffcu/dashboard/blob/master/README.md">Docs</a>
+    <a href="https://github.com/jeffcu/dashboard/issues">Issues</a>
+    <a href="https://github.com/jeffcu/dashboard/blob/master/LICENSE">MIT License</a>
+  </div>
+  <div class="footer-copy">Self-hosted. Your data stays on your machine.</div>
+</footer>
+
+</body>
+</html>

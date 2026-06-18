@@ -30,7 +30,7 @@ def _migrate() -> None:
             conn.commit()
             logger.info("Migrated: todos.sort_order added")
 
-        # friends — new social CRM fields
+        # friends — new keep-in-touch fields
         fcols = [r[1] for r in conn.execute(text("PRAGMA table_info(friends)"))]
         if fcols:
             changed = False

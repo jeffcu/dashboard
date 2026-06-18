@@ -1,4 +1,4 @@
-# The Board — Forward Balanced
+# The Board — Goal Manager
 
 > A personal life-balance dashboard. One `docker compose up` and you have a web UI, a Telegram bot, and a macOS menu bar widget — all talking to the same SQLite database.
 
@@ -39,7 +39,7 @@ Three clients, one data source:
 - **Full-text search** across all project journals
 - **64-color accent picker** — keeps project cards on-palette
 
-### Social CRM
+### Keep in Touch
 - Every contact has a **phase**: `TO_SCHEDULE → SCHEDULED → DONE`
 - **next_action** computed per contact based on phase, due date, and contact mode (call / lunch / either)
 - Overdue contacts surface in red; due-this-week in amber
@@ -254,7 +254,7 @@ dashboard/
 │   │   ├── project_log.py  # Project-level time tracking
 │   │   ├── projects.py     # Projects + diary entries
 │   │   ├── goals.py        # Goal underperformer engine
-│   │   ├── social.py       # Social CRM + contact history
+│   │   ├── social.py       # Keep in Touch + contact history
 │   │   ├── todos.py        # VIP Priorities
 │   │   └── summary.py      # Summary + brief endpoints
 │   └── static/

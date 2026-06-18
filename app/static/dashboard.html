@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Board — Forward Balanced</title>
+<title>The Board — Goal Manager</title>
 <style>
 /* ════════════════════════════════════════════════════════
    WORKSHOP — warm paper, ink, burnt orange, deep teal.
@@ -162,6 +162,10 @@ select, input[type="date"], input[type="number"] {
   position: relative;
 }
 .hm-cell:hover { box-shadow: inset 0 0 0 2px var(--orange); }
+.hm-sub {
+  position: absolute; bottom: 2px; left: 3px; font-size: 8px; font-weight: 700;
+  line-height: 1; letter-spacing: 0;
+}
 .hm-minus {
   position: absolute; bottom: 2px; right: 3px; font-size: 10px; font-weight: 900;
   line-height: 1; opacity: 0; transition: opacity 0.1s; cursor: pointer;
@@ -635,7 +639,7 @@ select, input[type="date"], input[type="number"] {
   <div id="header-inner">
     <span>
       <span id="wordmark">THE<span class="accent">BOARD</span></span>
-      <span id="tagline">FORWARD BALANCED</span>
+      <span id="tagline">GOAL MANAGER</span>
     </span>
     <span id="today-date">—</span>
   </div>
@@ -1249,16 +1253,21 @@ function renderHeatmap() {
     let rowSum = 0;
     let cells = '';
     for (const dom of doms) {
-      const v = d.cells[dateStr + '_' + dom.key] || 0;
-      rowSum += v;
-      const cellColor = v >= 4 ? '#FFFFFF' : (v > 0 ? '#7A4A12' : 'transparent');
-      const minusColor = v >= 4 ? 'rgba(255,255,255,0.8)' : 'var(--muted)';
-      cells += '<div class="hm-cell" style="background:' + HM_COLORS[v]
+      const v  = d.cells[dateStr + '_' + dom.key] || 0;
+      const pv = (d.proj_cells || {})[dateStr + '_' + dom.key] || 0;
+      const total = v + pv;
+      rowSum += total;
+      const cellColor = total >= 4 ? '#FFFFFF' : (total > 0 ? '#7A4A12' : 'transparent');
+      const minusColor = total >= 4 ? 'rgba(255,255,255,0.8)' : 'var(--muted)';
+      const subColor   = total >= 4 ? 'rgba(255,255,255,0.65)' : 'rgba(61,53,40,0.45)';
+      const subLabel   = (v > 0 && pv > 0) ? '<span class="hm-sub" style="color:' + subColor + '">' + v + 'd+' + pv + 'p</span>' : '';
+      cells += '<div class="hm-cell" style="background:' + HM_COLORS[Math.min(total, HM_COLORS.length - 1)]
         + ';color:' + cellColor + ';'
         + (isToday ? 'box-shadow:inset 0 0 0 2px #C44A18;' : '') + '"'
         + ' onclick="hmClick(\'' + dateStr + '\',\'' + dom.key + '\')"'
         + ' oncontextmenu="hmRight(event,\'' + dateStr + '\',\'' + dom.key + '\')">'
-        + (v || '')
+        + (total || '')
+        + subLabel
         + (v > 0 ? '<span class="hm-minus" style="color:' + minusColor + '" onclick="event.stopPropagation();hmDecrement(\''
           + dateStr + '\',\'' + dom.key + '\')">−</span>' : '')
         + '</div>';

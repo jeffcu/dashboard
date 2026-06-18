@@ -101,7 +101,7 @@ def build_brief_data(db: Session) -> dict:
     stale_projects.sort(key=lambda x: -x["days_quiet"])
     research_projects.sort(key=lambda x: -x["days_quiet"])
 
-    # ── social CRM: steps due ────────────────────────────
+    # ── keep in touch: steps due ─────────────────────────
     friends = db.query(Friend).filter(Friend.active == True).all()  # noqa: E712
     overdue = sorted(
         [f for f in friends
