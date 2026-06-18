@@ -105,17 +105,20 @@ def get_week(offset: int = 0, db: Session = Depends(get_db)):
         if key:
             col_totals[key] += r.hours
 
-    # Roll up project_log hours into domain totals
+    # Roll up project_log hours into domain totals and per-day proj_cells
     proj_rows = (db.query(ProjectLog)
                  .join(Project, ProjectLog.project_id == Project.id)
                  .filter(ProjectLog.date >= start, ProjectLog.date <= days[-1]).all())
     domain_by_proj = {}
     for p in db.query(Project).filter(Project.domain_id.isnot(None)).all():
         domain_by_proj[p.id] = by_id.get(p.domain_id)
+    proj_cells = {}
     for r in proj_rows:
         key = domain_by_proj.get(r.project_id)
         if key:
             col_totals[key] += r.hours
+            cell_key = f"{r.date.isoformat()}_{key}"
+            proj_cells[cell_key] = proj_cells.get(cell_key, 0) + r.hours
 
     return {
         "week_start": start.isoformat(),
@@ -123,6 +126,7 @@ def get_week(offset: int = 0, db: Session = Depends(get_db)):
         "today": date.today().isoformat(),
         "domains": [domain_payload(d) for d in domains],
         "cells": cells,
+        "proj_cells": proj_cells,
         "col_totals": col_totals,
         "week_total": sum(col_totals.values()),
     }

@@ -2,4 +2,18 @@
 data/
 __pycache__/
 *.pyc
+*.pyo
 .DS_Store
+
+# SQLite files that could land outside data/ if running bare uvicorn
+*.db
+*.sqlite
+*.sqlite3
+
+# Python virtualenvs
+venv/
+.venv/
+env/
+
+# Logs
+*.log

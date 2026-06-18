@@ -142,10 +142,6 @@ select, input[type="date"], input[type="number"] {
 /* ── DAILY LOG ── */
 #hm-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 #hm-week-label { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.5px; flex: 1; }
-#hm-wrap {
-  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-  padding: 16px; box-shadow: 0 1px 3px rgba(34,28,20,0.05);
-}
 #hm-grid { display: grid; gap: 4px; margin-bottom: 6px; }
 .hm-col-label {
   font-size: 10px; font-weight: 800; color: var(--ink); text-align: center;
@@ -183,12 +179,12 @@ select, input[type="date"], input[type="number"] {
 #hm-week-total { font-size: 12px; font-weight: 800; color: var(--ink); margin-left: 14px; }
 
 /* week-by-week domain heatmap (replaces trends sparklines) */
-#trends-panel, #domain-panel {
+#trends-panel {
   display: none; margin-top: 14px; background: var(--card);
   border: 1px solid var(--line); border-radius: 10px; padding: 16px;
   box-shadow: 0 1px 3px rgba(34,28,20,0.05);
 }
-#trends-panel.open, #domain-panel.open { display: block; }
+#trends-panel.open { display: block; }
 #weekly-hm { overflow-x: auto; }
 #weekly-hm table { border-collapse: collapse; font-size: 11px; width: 100%; }
 #weekly-hm th {
@@ -243,7 +239,7 @@ select, input[type="date"], input[type="number"] {
 #diary-panel.open, #add-proj-panel.open, #search-results.open { display: block; }
 #diary-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; }
 #diary-title { font-size: 17px; font-weight: 800; color: var(--ink); flex: 1; }
-#diary-entries { max-height: 340px; overflow-y: auto; margin-bottom: 12px; }
+#diary-entries { flex: 1 1 0; min-height: 0; overflow-y: auto; margin-bottom: 12px; }
 .diary-entry { border-bottom: 1px solid #F0EADD; padding: 10px 0; }
 .diary-ts { font-size: 11px; font-weight: 700; color: var(--teal); margin-bottom: 4px; }
 .diary-text { font-size: 14px; color: var(--body); white-space: pre-wrap; line-height: 1.55; }
@@ -538,68 +534,116 @@ select, input[type="date"], input[type="number"] {
 
 /* ── PROJECT TRACKER ── */
 #pt-wrap {
-  display: none; margin-top: 14px;
+  margin-top: 14px; overflow-x: auto;
   background: var(--card); border: 1px solid var(--line);
-  border-radius: 10px; padding: 16px;
-  box-shadow: 0 1px 3px rgba(34,28,20,0.05); overflow-x: auto;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(34,28,20,0.05);
 }
-#pt-wrap.open { display: block; }
-#pt-table { border-collapse: collapse; min-width: 600px; width: 100%; }
-#pt-table th {
-  font-size: 10px; font-weight: 800; letter-spacing: 0.6px; color: var(--muted);
-  padding: 4px 6px; text-align: center; white-space: nowrap;
+/* CSS Grid tracker — one shared template, perfect column alignment at any width */
+#pt-grid {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) repeat(7, 60px) 56px;
+  min-width: 560px;
 }
-#pt-table th.pt-name-col { text-align: left; min-width: 160px; }
-#pt-table th.pt-dom-col  { width: 60px; text-align: left; }
-.pt-section-hdr td {
-  padding: 10px 6px 4px; font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
-  color: #fff; border-radius: 4px 4px 0 0;
+/* header cells sit directly in the grid */
+.pt-hdr {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.8px; color: var(--muted);
+  padding: 10px 3px 8px; text-align: center; white-space: nowrap;
+  border-bottom: 2px solid var(--line); background: var(--card);
 }
-.pt-section-hdr.first td { padding-top: 4px; }
-.pt-row { border-bottom: 1px solid #F0EADD; }
-.pt-row:last-child { border-bottom: none; }
-.pt-dom-badge {
-  display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 0.8px;
-  padding: 2px 7px; border-radius: 10px; color: #fff; white-space: nowrap;
+.pt-hdr.pt-name-col {
+  text-align: left; padding-left: 14px; padding-right: 10px;
 }
+.pt-hdr.pt-today { color: var(--orange); }
+
+/* domain bar — spans all 9 columns */
+.pt-dom-bar {
+  grid-column: 1 / -1;
+  padding: 0; border-top: 6px solid var(--paper);
+}
+.pt-dom-bar-inner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px; cursor: pointer; user-select: none;
+  background: var(--ink); color: rgba(255,255,255,0.7);
+  font-size: 10px; font-weight: 800; letter-spacing: 2px;
+}
+.pt-dom-bar-inner:hover { background: #2D2620; }
+.pt-dom-arrow { font-size: 9px; opacity: 0.5; flex-shrink: 0; }
+.pt-dom-label { flex: 1; }
+.pt-dom-wk { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); }
+.pt-dom-bar-accent {
+  width: 4px; height: 14px; border-radius: 2px; flex-shrink: 0;
+}
+
+/* project rows — subgrid so children align to parent columns */
+.pt-row {
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: subgrid;
+  border-bottom: 1px solid #F0EADD;
+}
+.pt-row.pt-hidden { display: none; }
+.pt-row.drag-over > * { background: #FEF3EC; }
 .pt-proj-name {
+  display: flex; align-items: center;
   font-size: 13px; font-weight: 700; color: var(--ink);
-  padding: 6px 8px 6px 0; max-width: 200px;
+  padding: 0 10px 0 14px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  cursor: grab; min-width: 0;
 }
+
+/* day cells — wrapper centers the pt-cell within the 60px column */
+.pt-day-cell { padding: 4px 3px; display: flex; align-items: center; justify-content: center; }
 .pt-cell {
-  width: 44px; height: 38px; text-align: center; cursor: pointer;
-  font-size: 13px; font-weight: 800; border-radius: 6px;
-  border: 1px solid rgba(34,28,20,0.06); position: relative;
-  transition: box-shadow 0.1s;
+  width: 52px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; border-radius: 6px; position: relative;
+  font-size: 15px; font-weight: 800;
+  border: 1.5px solid rgba(34,28,20,0.08);
+  background: var(--paper);
+  transition: box-shadow 0.08s;
+  user-select: none;
 }
 .pt-cell:hover { box-shadow: inset 0 0 0 2px var(--orange); }
-.pt-cell.today-col { box-shadow: inset 0 0 0 2px rgba(196,74,24,0.35); }
-.pt-cell.today-col:hover { box-shadow: inset 0 0 0 2px var(--orange); }
+.pt-cell.pt-today { box-shadow: inset 0 0 0 2px rgba(196,74,24,0.4); }
+.pt-cell.pt-today:hover { box-shadow: inset 0 0 0 2px var(--orange); }
+.pt-cell.pt-has-val { background: var(--card); }
+
+/* − badge — always visible when value > 0 */
 .pt-minus {
-  position: absolute; bottom: 1px; right: 2px; font-size: 9px; font-weight: 900;
-  line-height: 1; opacity: 0; color: var(--ink); cursor: pointer; padding: 1px 2px;
+  position: absolute; bottom: 2px; right: 3px;
+  font-size: 11px; font-weight: 900; line-height: 1;
+  color: inherit; opacity: 0.3; cursor: pointer;
+  padding: 1px 3px;
 }
-.pt-cell:hover .pt-minus { opacity: 0.5; }
+.pt-cell:hover .pt-minus { opacity: 0.7; }
 .pt-minus:hover { opacity: 1 !important; }
+
+/* totals */
 .pt-row-total {
-  font-size: 11px; font-weight: 800; color: var(--muted);
-  text-align: center; padding: 0 6px; white-space: nowrap;
+  font-size: 12px; font-weight: 800; color: var(--muted);
+  text-align: center; padding: 0 10px; white-space: nowrap;
+  border-left: 1px solid var(--line);
 }
-.pt-row-total.has-hours { color: var(--ink); }
+.pt-row-total.pt-has-hours { color: var(--ink); }
 .pt-col-total {
-  font-size: 11px; font-weight: 800; text-align: center;
-  padding: 4px 6px; color: var(--ink);
+  font-size: 12px; font-weight: 800; text-align: center;
+  padding: 8px 3px; color: var(--ink);
 }
-.pt-empty { font-size: 12px; color: var(--faint); padding: 8px 0; font-style: italic; }
+.pt-week-total-row {
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: subgrid;
+  border-top: 2px solid var(--line); background: var(--paper);
+}
+.pt-week-label {
+  font-size: 10px; font-weight: 800; letter-spacing: 1px;
+  color: var(--orange); padding: 8px 0 8px 14px;
+  display: flex; align-items: center;
+}
+.pt-empty { font-size: 13px; color: var(--faint); padding: 24px; font-style: italic; }
+
 /* drag & drop */
-.pt-section-hdr.drag-over td { outline: 2px dashed var(--orange); }
-.pt-row.drag-over td { background: #FEF3EC; }
+.pt-dom-bar.drag-over .pt-dom-bar-inner { background: #2D2620; }
 .pt-row[draggable] { cursor: grab; }
-.pt-section-hdr[draggable] { cursor: grab; }
-/* domain inline-edit row */
-.pt-dom-edit-row td { padding: 6px 8px; background: var(--paper); border-bottom: 2px solid var(--orange); }
-.pt-dom-edit-row input { font-size: 12px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); }
 /* color picker */
 .color-picker-wrap { position: relative; display: inline-block; }
 .color-swatch-btn { width: 28px; height: 28px; border-radius: 6px; border: 2px solid var(--line); cursor: pointer; display: inline-block; vertical-align: middle; }
@@ -612,7 +656,7 @@ select, input[type="date"], input[type="number"] {
 .color-swatch:hover { transform: scale(1.2); border-color: var(--ink); }
 .color-swatch.selected { border-color: var(--ink); box-shadow: 0 0 0 1px #fff inset; }
 /* diary restructure */
-#diary-panel.open { display: flex; flex-direction: column; position: sticky; top: 72px; max-height: calc(100vh - 90px); overflow-y: auto; z-index: 10; }
+#diary-panel.open { display: flex; flex-direction: column; position: sticky; top: 72px; height: calc(100vh - 90px); overflow: hidden; z-index: 10; }
 #diary-mgmt { display: none; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
 #diary-mgmt.open { display: block; }
 .proj-all-time { font-size: 10px; font-weight: 700; color: var(--faint); margin-top: 1px; }
@@ -717,22 +761,10 @@ select, input[type="date"], input[type="number"] {
     <button class="dim" onclick="hmNav(0)">TODAY</button>
     <button class="dim" onclick="hmNav(1)">NEXT ▶</button>
     <span id="hm-week-label"></span>
-    <div class="view-toggle">
-      <button id="vt-domains" onclick="setTrackerView('domains')">DOMAINS</button>
-      <button id="vt-projects" class="on" onclick="setTrackerView('projects')">PROJECTS</button>
-    </div>
-    <button class="dim" onclick="toggleTrends()">WEEKLY VIEW</button>
-    <button class="dim" onclick="toggleDomains()">⚙ DOMAINS</button>
+    <button class="dim" onclick="toggleTrends()">12-WEEK VIEW</button>
   </div>
-  <!-- DOMAINS VIEW (hidden by default) -->
-  <div id="hm-wrap" style="display:none;">
-    <div id="hm-grid"></div>
-    <div id="hm-legend"></div>
-  </div>
-  <!-- PROJECTS VIEW (shown by default) -->
-  <div id="pt-wrap" class="open"></div>
+  <div id="pt-wrap"></div>
   <div id="trends-panel"></div>
-  <div id="domain-panel"></div>
 </div>
 
 <!-- ═══ DIARIES ═══ -->
@@ -1035,7 +1067,7 @@ function switchTab(name) {
   tabs[map[name]].classList.add('on');
   panels[map[name]].classList.add('on');
   if (name === 'today') loadToday();
-  if (name === 'daily') { if (trackerView === 'projects') loadProjectTracker(); else loadWeek(); }
+  if (name === 'daily') { loadProjectTracker(); loadWeek(); }
   if (name === 'social') { loadFriends(); loadQueueStats(); }
 }
 
@@ -1202,7 +1234,7 @@ let hmOffset = 0, hmData = null;
 function hmNav(dir) {
   hmOffset = dir === 0 ? 0 : hmOffset + dir;
   loadWeek();
-  if (trackerView === 'projects') loadProjectTracker();
+  loadProjectTracker();
 }
 
 async function loadWeek() {
@@ -1232,11 +1264,14 @@ function hmDecrement(dateStr, key) {
 
 function renderHeatmap() {
   const d = hmData;
-  const doms = d.domains;
+  // update the week label in the nav (still present)
+  const lbl = document.getElementById('hm-week-label');
+  if (lbl) lbl.textContent = 'WEEK OF ' + d.week_start + (hmOffset === 0 ? '  (current)' : '');
+  // domain heatmap grid was removed — nothing more to render
   const grid = document.getElementById('hm-grid');
+  if (!grid) return;
+  const doms = d.domains;
   grid.style.gridTemplateColumns = '46px repeat(' + doms.length + ', 1fr) 36px';
-  document.getElementById('hm-week-label').textContent =
-    'WEEK OF ' + d.week_start + (hmOffset === 0 ? '  (current)' : '');
 
   let html = '<div></div>';
   for (const dom of doms) {
@@ -1303,8 +1338,8 @@ function renderHeatmap() {
 // ════════════════════════════════════════════════════════
 // PROJECT TRACKER (toggle view)
 // ════════════════════════════════════════════════════════
-let trackerView = 'projects'; // 'domains' | 'projects'
 let ptData = null;
+let ptCollapsed = new Set(); // domain keys that are collapsed
 
 // A rotating palette of distinct warm/cool colours — one per domain group
 const PT_PALETTE = [
@@ -1328,13 +1363,9 @@ function seedDomainColors(projects) {
   }
 }
 
-function setTrackerView(v) {
-  trackerView = v;
-  document.getElementById('vt-domains').classList.toggle('on', v === 'domains');
-  document.getElementById('vt-projects').classList.toggle('on', v === 'projects');
-  document.getElementById('hm-wrap').style.display = v === 'domains' ? '' : 'none';
-  document.getElementById('pt-wrap').classList.toggle('open', v === 'projects');
-  if (v === 'projects') loadProjectTracker();
+function ptToggleDomain(key) {
+  if (ptCollapsed.has(key)) ptCollapsed.delete(key); else ptCollapsed.add(key);
+  renderProjectTracker();
 }
 
 async function loadProjectTracker() {
@@ -1356,9 +1387,7 @@ async function ptSet(dateStr, projId, hours) {
     body: { date: dateStr, project_id: projId, hours: hours } });
   ptData = await api('/api/project-log/week?offset=' + hmOffset);
   renderProjectTracker();
-  // also refresh domain heatmap so domain totals stay in sync
   hmData = await api('/api/log/week?offset=' + hmOffset);
-  if (trackerView === 'domains') renderHeatmap();
 }
 
 const DAY_ABBR = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
@@ -1411,24 +1440,6 @@ async function ptProjDrop(e, targetId) {
   await loadProjectTracker(); await loadProjects();
 }
 
-// ── Domain inline edit ────────────────────────────────────
-let ptEditDomId = null;
-async function ptOpenDomEdit(domId) {
-  if (ptEditDomId === domId) { ptCloseDomEdit(); return; }
-  ptEditDomId = domId;
-  renderProjectTracker();
-}
-function ptCloseDomEdit() { ptEditDomId = null; renderProjectTracker(); }
-async function ptSaveDomEdit(domId) {
-  await api('/api/domains/' + domId, { method: 'PATCH', body: {
-    label: document.getElementById('ptde-label-' + domId).value,
-    weekly_goal: parseInt(document.getElementById('ptde-wkgoal-' + domId).value) || 0,
-    goal_pct: parseInt(document.getElementById('ptde-pct-' + domId).value) || 0,
-  }});
-  ptEditDomId = null;
-  await loadProjectTracker(); await loadWeek();
-}
-
 function renderProjectTracker() {
   const d = ptData;
   const wrap = document.getElementById('pt-wrap');
@@ -1436,7 +1447,7 @@ function renderProjectTracker() {
   const allProjects = d.projects || [];
 
   if (allProjects.length === 0) {
-    wrap.innerHTML = '<div class="pt-empty" style="padding:20px;">No projects yet. Add projects in the Diaries tab.</div>';
+    wrap.innerHTML = '<div class="pt-empty">No projects yet — add them in the Diaries tab.</div>';
     return;
   }
 
@@ -1452,101 +1463,75 @@ function renderProjectTracker() {
     grouped[dk].projs.push(p);
   }
 
-  function projRow(p, dk) {
-    let cells = '';
-    for (const day of d.days) {
+  function projRow(p) {
+    const dimmed = p.status === 'PAUSED';
+    const wkH = d.days.reduce((s, day) => s + (d.cells[day + '_' + p.id] || 0), 0);
+    const cells = d.days.map(day => {
       const v = d.cells[day + '_' + p.id] || 0;
       const isToday = day === todayStr;
       const bg = v > 0 ? HM_COLORS[Math.min(v, 8)] : '';
-      const fg = v >= 4 ? '#FFFFFF' : (v > 0 ? '#7A4A12' : '');
-      const mc = v >= 4 ? 'rgba(255,255,255,0.8)' : 'var(--muted)';
-      cells += `<td><div class="pt-cell${isToday ? ' today-col' : ''}" style="background:${bg};color:${fg};"
-        onclick="ptClick('${day}',${p.id})">${v || ''}${v > 0
-          ? `<span class="pt-minus" style="color:${mc}" onclick="event.stopPropagation();ptDecrement('${day}',${p.id})">−</span>` : ''
-        }</div></td>`;
-    }
-    const wkH = d.days.reduce((s, day) => s + (d.cells[day + '_' + p.id] || 0), 0);
-    const allH = p.all_time_hours || 0;
-    const dimmed = p.status === 'PAUSED';
-    const accentDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${esc(p.accent_color || '#aaa')};margin-right:5px;flex-shrink:0;"></span>`;
-    return `<tr class="pt-row" style="${dimmed ? 'opacity:0.5;' : ''}"
+      const fg = v >= 4 ? '#FFFFFF' : (v > 0 ? '#7A4A12' : 'var(--faint)');
+      const hasVal = v > 0 ? ' pt-has-val' : '';
+      return `<div class="pt-day-cell">
+        <div class="pt-cell${isToday ? ' pt-today' : ''}${hasVal}" style="background:${bg};color:${fg};"
+          onclick="ptClick('${day}',${p.id})">${v || ''}${v > 0
+            ? `<span class="pt-minus" onclick="event.stopPropagation();ptDecrement('${day}',${p.id})">−</span>` : ''
+          }</div></div>`;
+    }).join('');
+    const dot = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${esc(p.accent_color||'#aaa')};margin-right:6px;flex-shrink:0;"></span>`;
+    return `<div class="pt-row" style="${dimmed?'opacity:0.45;':''}"
       draggable="true"
-      ondragstart="ptProjDragStart(event,${p.id})"
-      ondragend="ptProjDragEnd(event)"
+      ondragstart="ptProjDragStart(event,${p.id})" ondragend="ptProjDragEnd(event)"
       ondragover="event.preventDefault();this.classList.add('drag-over')"
       ondragleave="this.classList.remove('drag-over')"
       ondrop="ptProjDrop(event,${p.id})">
-      <td class="pt-proj-name" title="${esc(p.name)}">${accentDot}${esc(p.name)}</td>
+      <div class="pt-proj-name" title="${esc(p.name)}">${dot}${esc(p.name)}</div>
       ${cells}
-      <td class="pt-row-total${wkH > 0 ? ' has-hours' : ''}">
-        <div>${wkH > 0 ? wkH + 'h' : '—'}</div>
-        ${allH > 0 ? `<div style="font-size:9px;color:var(--faint);font-weight:600;">${allH}h tot</div>` : ''}
-      </td>
-    </tr>`;
+      <div class="pt-row-total${wkH>0?' pt-has-hours':''}">${wkH>0?wkH+'h':'—'}</div>
+    </div>`;
   }
 
-  let html = `<table id="pt-table">
-    <thead><tr>
-      <th class="pt-name-col" style="text-align:left;">PROJECT</th>
-      ${d.days.map((day, i) => {
-        const isToday = day === todayStr;
-        return `<th style="${isToday ? 'color:var(--orange);font-weight:900;' : ''}">${DAY_ABBR[i]}</th>`;
-      }).join('')}
-      <th style="min-width:46px;">WK / ALL</th>
-    </tr></thead><tbody>`;
+  // Grid: name col (flexible) + 7 fixed 60px day cols + 56px WK col
+  let html = `<div id="pt-grid">`;
+
+  // Header row — cells sit directly in the grid
+  html += `<div class="pt-hdr pt-name-col">PROJECT</div>`;
+  html += d.days.map((day, i) => `<div class="pt-hdr${day===todayStr?' pt-today':''}">${DAY_ABBR[i]}</div>`).join('');
+  html += `<div class="pt-hdr">WK</div>`;
 
   for (const [dk, { dom, projs }] of Object.entries(grouped)) {
     if (projs.length === 0) continue;
-    const dColor = domainColor(dk === '__none__' ? '—' : dk);
-    const domLabel = dom.label || dom.key || 'Unassigned';
-    const domId = dom.id;
-    const allTimeH = dom.all_time_hours || 0;
-    const isEditing = domId && ptEditDomId === domId;
+    const collapsed = ptCollapsed.has(dk);
+    const dColor = dom.accent_color || domainColor(dk === '__none__' ? '—' : dk);
+    const label = (dom.label || dom.key || 'Unassigned').toUpperCase();
+    const wkH = projs.reduce((s, p) => s + d.days.reduce((s2, day) => s2 + (d.cells[day+'_'+p.id]||0), 0), 0);
 
-    html += `<tr class="pt-section-hdr" draggable="${domId ? 'true' : 'false'}"
-      ondragstart="ptDomDragStart(event,'${dk}')"
-      ondragend="ptDomDragEnd(event)"
+    html += `<div class="pt-dom-bar"
+      draggable="${dom.id?'true':'false'}"
+      ondragstart="ptDomDragStart(event,'${dk}')" ondragend="ptDomDragEnd(event)"
       ondragover="event.preventDefault();this.classList.add('drag-over')"
       ondragleave="this.classList.remove('drag-over')"
       ondrop="ptDomDrop(event,'${dk}')">
-      <td colspan="${d.days.length + 2}"
-        style="background:${dColor};color:#fff;padding:5px 10px;font-size:11px;font-weight:800;letter-spacing:1.8px;border-radius:3px;cursor:${domId ? 'pointer' : 'default'};"
-        onclick="${domId ? 'ptOpenDomEdit(' + domId + ')' : ''}">
-        ${esc(domLabel.toUpperCase())}
-        ${allTimeH > 0 ? `<span style="font-size:10px;font-weight:600;opacity:0.8;margin-left:10px;">${allTimeH}h</span>` : ''}
-        ${domId ? '<span style="float:right;font-size:10px;opacity:0.7;">✎</span>' : ''}
-      </td>
-    </tr>`;
+      <div class="pt-dom-bar-inner" onclick="ptToggleDomain('${dk}')">
+        <div class="pt-dom-bar-accent" style="background:${dColor};"></div>
+        <span class="pt-dom-arrow">${collapsed?'▶':'▼'}</span>
+        <span class="pt-dom-label">${esc(label)}</span>
+        ${wkH>0?`<span class="pt-dom-wk">${wkH}h</span>`:''}
+      </div>
+    </div>`;
 
-    if (isEditing) {
-      html += `<tr class="pt-dom-edit-row">
-        <td colspan="${d.days.length + 2}">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <input id="ptde-label-${domId}" value="${esc(domLabel)}" style="width:140px;" placeholder="Label">
-            <label style="font-size:10px;color:var(--muted);">WK HRS</label>
-            <input id="ptde-wkgoal-${domId}" type="number" value="${dom.weekly_goal||0}" min="0" max="60" style="width:50px;">
-            <label style="font-size:10px;color:var(--muted);">% GOAL</label>
-            <input id="ptde-pct-${domId}" type="number" value="${dom.goal_pct||0}" min="0" max="100" style="width:50px;">
-            <button onclick="ptSaveDomEdit(${domId})">SAVE</button>
-            <button class="dim" onclick="ptCloseDomEdit()">CANCEL</button>
-          </div>
-        </td>
-      </tr>`;
+    if (!collapsed) {
+      for (const p of projs) html += projRow(p);
     }
-
-    for (const p of projs) html += projRow(p, dk);
   }
 
-  html += `<tr style="border-top:2px solid var(--line);">
-    <td style="padding:5px 0;font-size:10px;font-weight:800;color:var(--orange);letter-spacing:1px;">WEEK TOTAL</td>
-    ${dayTotals.map((t, i) => {
-      const isToday = d.days[i] === todayStr;
-      return `<td class="pt-col-total" style="${isToday ? 'color:var(--orange);' : ''}">${t || '—'}</td>`;
-    }).join('')}
-    <td class="pt-row-total has-hours">${d.week_total > 0 ? d.week_total + 'h' : '—'}</td>
-  </tr>`;
+  html += `<div class="pt-week-total-row">
+    <div class="pt-week-label">WEEK TOTAL</div>
+    ${dayTotals.map((t, i) => `<div class="pt-col-total${d.days[i]===todayStr?' pt-today':''}">${t||'—'}</div>`).join('')}
+    <div class="pt-row-total pt-has-hours">${d.week_total>0?d.week_total+'h':'—'}</div>
+  </div>`;
 
-  html += '</tbody></table>';
+  html += '</div>'; // close #pt-grid
   wrap.innerHTML = html;
 }
 
@@ -1629,47 +1614,6 @@ async function toggleTrends() {
   p.classList.add('open');
 }
 
-// domain settings
-async function toggleDomains() {
-  const p = document.getElementById('domain-panel');
-  if (p.classList.contains('open')) { p.classList.remove('open'); return; }
-  await renderDomainPanel();
-  p.classList.add('open');
-}
-
-async function renderDomainPanel() {
-  const doms = await api('/api/domains');
-  const p = document.getElementById('domain-panel');
-  let html = '<div class="sec-hint" style="margin-bottom:6px;">DOMAIN SETTINGS — WK GOAL=hrs/week · % GOAL=target share of total time (0=none)</div>'
-    + '<div style="display:flex;gap:8px;padding:0 0 4px;font-size:9px;font-weight:800;color:var(--muted);letter-spacing:1px;">'
-    + '<span style="width:70px;">KEY</span><span style="width:130px;">LABEL</span>'
-    + '<span style="width:58px;">WK HRS</span><span style="width:52px;">% GOAL</span></div>';
-  for (const d of doms.filter(x => x.active)) {
-    html += '<div class="dom-row"><span class="dom-key">' + esc(d.key) + '</span>'
-      + '<input type="text" id="dl-' + d.id + '" value="' + esc(d.label) + '" class="form-input">'
-      + '<input type="number" id="dg-' + d.id + '" value="' + d.weekly_goal + '" min="0" max="60" title="weekly hour goal">'
-      + '<input type="number" id="dp-' + d.id + '" value="' + (d.goal_pct || 0) + '" min="0" max="100" class="goal-pct-input" title="% of total time goal">'
-      + '<button class="dim" onclick="saveDomain(' + d.id + ')">SAVE</button>'
-      + '<button class="dim" onclick="moveDomain(' + d.id + ',-1)">▲</button>'
-      + '<button class="dim" onclick="moveDomain(' + d.id + ',1)">▼</button>'
-      + '<button class="danger" onclick="archiveDomain(' + d.id + ',\'' + esc(d.key) + '\')">ARCHIVE</button>'
-      + '</div>';
-  }
-  const archived = doms.filter(x => !x.active);
-  if (archived.length) {
-    html += '<div class="sec-hint" style="margin:10px 0 4px;">ARCHIVED</div>';
-    for (const d of archived) {
-      html += '<div class="dom-row"><span class="dom-key" style="color:#B5A892;">' + esc(d.key) + '</span>'
-        + '<button class="dim" onclick="unarchiveDomain(' + d.id + ')">RESTORE</button></div>';
-    }
-  }
-  html += '<div class="dom-row" style="border-bottom:none;margin-top:8px;">'
-    + '<input type="text" id="nd-key" class="form-input" placeholder="KEY" style="width:90px;">'
-    + '<input type="text" id="nd-label" class="form-input" placeholder="Label" style="width:130px;">'
-    + '<input type="number" id="nd-goal" value="0" min="0">'
-    + '<button onclick="addDomain()">+ ADD DOMAIN</button></div>';
-  p.innerHTML = html;
-}
 
 async function saveDomain(id) {
   await api('/api/domains/' + id, { method: 'PATCH', body: {
@@ -1677,7 +1621,7 @@ async function saveDomain(id) {
     weekly_goal: parseInt(document.getElementById('dg-' + id).value) || 0,
     goal_pct: parseInt(document.getElementById('dp-' + id).value) || 0,
   }});
-  await renderDomainPanel(); await loadWeek();
+  await loadProjectTracker(); await loadWeek();
 }
 async function moveDomain(id, dir) {
   const doms = (await api('/api/domains')).filter(x => x.active);
@@ -1686,16 +1630,16 @@ async function moveDomain(id, dir) {
   if (j < 0 || j >= doms.length) return;
   await api('/api/domains/' + doms[idx].id, { method: 'PATCH', body: { sort_order: doms[j].sort_order } });
   await api('/api/domains/' + doms[j].id, { method: 'PATCH', body: { sort_order: doms[idx].sort_order } });
-  await renderDomainPanel(); await loadWeek();
+  await loadProjectTracker(); await loadWeek();
 }
 async function archiveDomain(id, key) {
   if (!confirm('Archive ' + key + '? History is preserved.')) return;
   await api('/api/domains/' + id, { method: 'PATCH', body: { active: false } });
-  await renderDomainPanel(); await loadWeek();
+  await loadProjectTracker(); await loadWeek();
 }
 async function unarchiveDomain(id) {
   await api('/api/domains/' + id, { method: 'PATCH', body: { active: true } });
-  await renderDomainPanel(); await loadWeek();
+  await loadProjectTracker(); await loadWeek();
 }
 async function addDomain() {
   const key = document.getElementById('nd-key').value.trim();
@@ -1705,7 +1649,7 @@ async function addDomain() {
     label: document.getElementById('nd-label').value.trim() || key,
     weekly_goal: parseInt(document.getElementById('nd-goal').value) || 0,
   }});
-  await renderDomainPanel(); await loadWeek();
+  await loadProjectTracker(); await loadWeek();
 }
 
 // ── Color picker ─────────────────────────────────────────
