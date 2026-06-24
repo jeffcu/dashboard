@@ -441,6 +441,26 @@ select, input[type="date"], input[type="number"] {
 .today-empty { font-size: 12px; color: var(--faint); padding: 6px 0; }
 .today-more { font-size: 11px; font-weight: 700; color: var(--muted); padding-top: 6px; cursor: pointer; }
 
+/* ── TIME INVESTMENT chart (relative scale) ── */
+.tu-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.tu-label { width: 90px; flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tu-bar-wrap { flex: 1; height: 14px; background: #F0EADD; border-radius: 4px; overflow: hidden; }
+.tu-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.tu-hours { width: 42px; flex-shrink: 0; font-size: 11px; color: var(--muted); text-align: right; }
+
+/* ── RESEARCH THREADS race-to-zero ── */
+.rt-counter { display: flex; align-items: baseline; gap: 6px; padding: 2px 0 8px; }
+.rt-counter .rt-num { font-size: 28px; font-weight: 800; color: var(--orange-d); line-height: 1; }
+.rt-counter .rt-label { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
+.rt-counter.rt-zero .rt-num { color: var(--green); }
+
+/* ── CALENDAR / DIARY rows ── */
+.cal-date { font-size: 11px; color: var(--teal); font-weight: 700; width: 48px; flex-shrink: 0; }
+.diary-note { font-size: 12px; color: var(--body); padding: 6px 0; border-bottom: 1px solid #F0EADD; }
+.diary-note:last-child { border-bottom: none; }
+.diary-note .t-strong { font-weight: 800; color: var(--ink); }
+.diary-note .dn-meta { font-size: 10px; color: var(--faint); margin-left: 6px; }
+
 /* ── GOALS PANEL (TODAY tab) ── */
 #goals-panel {
   background: var(--card); border: 1px solid var(--line); border-radius: 10px;
@@ -713,6 +733,13 @@ select, input[type="date"], input[type="number"] {
     <div class="today-card-title">THE AGENDA — KEEP THE WHEELS TURNING</div>
     <div id="agenda-list"></div>
   </div>
+
+  <div class="today-card" id="timeuse-card" style="margin-bottom:14px;">
+    <div class="today-card-title">TIME INVESTMENT THIS WEEK — BY PROJECT
+      <button class="dim" onclick="switchTab('daily')">DAILY LOG ▸</button></div>
+    <div id="today-timeuse"></div>
+  </div>
+
   <div id="today-grid">
     <div class="today-card">
       <div class="today-card-title">VIP PRIORITIES
@@ -720,12 +747,22 @@ select, input[type="date"], input[type="number"] {
       <div id="today-priorities"></div>
     </div>
     <div class="today-card">
+      <div class="today-card-title">TO-DOS
+        <button class="dim" onclick="switchTab('todos')">OPEN ▸</button></div>
+      <div id="today-todos"></div>
+    </div>
+    <div class="today-card">
       <div class="today-card-title">SOCIAL — STEPS DUE
         <button class="dim" onclick="switchTab('social')">CRM ▸</button></div>
       <div id="today-social"></div>
     </div>
     <div class="today-card">
-      <div class="today-card-title">RESEARCH THREADS
+      <div class="today-card-title">ON THE CALENDAR
+        <button class="dim" onclick="switchTab('todos')">PRIORITIES ▸</button></div>
+      <div id="today-calendar"></div>
+    </div>
+    <div class="today-card">
+      <div class="today-card-title">RESEARCH THREADS — RACE TO ZERO
         <button class="dim" onclick="switchTab('diaries')">DIARIES ▸</button></div>
       <div id="today-research"></div>
     </div>
@@ -733,6 +770,11 @@ select, input[type="date"], input[type="number"] {
       <div class="today-card-title">GETTING BEHIND
         <button class="dim" onclick="switchTab('diaries')">PROJECTS ▸</button></div>
       <div id="today-behind"></div>
+    </div>
+    <div class="today-card" style="grid-column:1/-1;">
+      <div class="today-card-title">LATEST DIARY NOTES
+        <button class="dim" onclick="switchTab('diaries')">DIARIES ▸</button></div>
+      <div id="today-diary"></div>
     </div>
   </div>
 
@@ -1007,6 +1049,27 @@ select, input[type="date"], input[type="number"] {
       <div id="vip-done" class="done-list"></div>
     </div>
   </div>
+
+  <div class="sec-hdr" style="margin-top:24px;">
+    <span class="sec-label">TO-DOS</span>
+    <span class="sec-hint">▲▼ TO REORDER · 📝 FOR UPDATE NOTES</span>
+  </div>
+  <div id="todo-layout">
+    <div class="todo-col">
+      <div class="todo-add-row">
+        <input type="text" id="todo-input" class="todo-add-input" placeholder="New to-do…"
+               onkeydown="if(event.key==='Enter')addTodo('todo')">
+        <input type="date" id="todo-due">
+        <button onclick="addTodo('todo')">ADD</button>
+      </div>
+      <div id="todo-list"></div>
+      <div class="done-hdr" onclick="toggleDone('todo')">
+        <span>▸ DONE (<span id="todo-done-count">0</span>)</span>
+        <button class="dim" onclick="event.stopPropagation();clearCompleted('todo')">CLEAR</button>
+      </div>
+      <div id="todo-done" class="done-list"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ MODAL ═══ -->
@@ -1069,6 +1132,7 @@ function switchTab(name) {
   if (name === 'today') loadToday();
   if (name === 'daily') { loadProjectTracker(); loadWeek(); }
   if (name === 'social') { loadFriends(); loadQueueStats(); }
+  if (name === 'todos') { loadTodos('vip'); loadTodos('todo'); }
 }
 
 // ════════════════════════════════════════════════════════
@@ -1104,14 +1168,8 @@ async function loadToday() {
           + (d.priorities.length - 6) + ' more ▸</div>' : '')
     : '<div class="today-empty">No open priorities.</div>';
 
-  // research threads
+  // research threads (rendered below, race-to-zero card)
   const rp = d.research_projects || [];
-  document.getElementById('today-research').innerHTML = rp.length
-    ? rp.map(p => '<div class="today-row"><span class="t-strong">'
-        + esc(p.name) + '</span><span>'
-        + (p.note ? esc(p.note) : (p.days_quiet > 0 ? 'quiet ' + p.days_quiet + 'd' : 'new'))
-        + '</span></div>').join('')
-    : '<div class="today-empty">No research threads. Add some in Diaries ▸</div>';
 
   // getting behind: goals at risk + stale work projects + dormant domains
   let behind = '';
@@ -1150,8 +1208,72 @@ async function loadToday() {
   document.getElementById('today-social').innerHTML =
     soc || '<div class="today-empty">Every relationship on plan.</div>';
 
+  // to-dos (top 6)
+  const td = d.todos || [];
+  document.getElementById('today-todos').innerHTML = td.length
+    ? td.slice(0, 6).map(t => {
+        let cls = t.overdue ? ' t-red' : (t.due_today ? ' t-amber' : '');
+        let tag = t.overdue ? ' ⚠' : (t.due_today ? ' · today' :
+          (t.due_date ? ' · ' + t.due_date.slice(5) : ''));
+        return '<div class="today-row' + cls + '"><span class="t-strong">'
+          + t.rank + '.</span><span>' + esc(t.text) + tag + '</span></div>';
+      }).join('')
+      + (td.length > 6
+        ? '<div class="today-more" onclick="switchTab(\'todos\')">+ '
+          + (td.length - 6) + ' more ▸</div>' : '')
+    : '<div class="today-empty">No open to-dos.</div>';
+
+  // calendar — every dated commitment, soonest first
+  const cal = d.calendar || [];
+  document.getElementById('today-calendar').innerHTML = cal.length
+    ? cal.map(c => '<div class="today-row"><span class="cal-date">'
+        + c.date.slice(5) + '</span><span>' + esc(c.text) + '</span></div>').join('')
+    : '<div class="today-empty">Nothing dated ahead.</div>';
+
+  // research threads — race to zero
+  const rtOpen = d.research_threads_open || 0;
+  document.getElementById('today-research').innerHTML =
+    '<div class="rt-counter' + (rtOpen === 0 ? ' rt-zero' : '') + '">'
+    + '<span class="rt-num">' + rtOpen + '</span>'
+    + '<span class="rt-label">' + (rtOpen === 0
+        ? 'AT ZERO — BACKLOG CLEARED ✦'
+        : 'OPEN THREAD' + (rtOpen === 1 ? '' : 'S') + ' · WORK TOWARD ZERO') + '</span></div>'
+    + rp.map(p => '<div class="today-row"><span class="t-strong">'
+        + esc(p.name) + '</span><span>'
+        + (p.note ? esc(p.note) : (p.days_quiet > 0 ? 'quiet ' + p.days_quiet + 'd' : 'new'))
+        + '</span></div>').join('');
+
+  // latest diary notes across all projects
+  const rd = d.recent_diary || [];
+  document.getElementById('today-diary').innerHTML = rd.length
+    ? rd.map(e => '<div class="diary-note"><span class="t-strong">'
+        + esc(e.project_name) + '</span><span class="dn-meta">'
+        + e.created_at.slice(0, 10) + '</span><div>' + esc(e.text) + '</div></div>').join('')
+    : '<div class="today-empty">No diary entries yet.</div>';
+
+  // time investment this week, by project — relative bar chart
+  loadTimeUse();
+
   // goals panel
   loadGoals();
+}
+
+async function loadTimeUse() {
+  let pl;
+  try { pl = await api('/api/project-log/week'); } catch(e) { return; }
+  const el = document.getElementById('today-timeuse');
+  const active = (pl.projects || []).filter(p => p.week_hours > 0)
+    .sort((a, b) => b.week_hours - a.week_hours);
+  if (!active.length) {
+    el.innerHTML = '<div class="today-empty">No hours logged yet this week.</div>';
+    return;
+  }
+  const max = active[0].week_hours;
+  el.innerHTML = active.map(p =>
+    '<div class="tu-row"><span class="tu-label" title="' + esc(p.name) + '">'
+    + esc(p.name) + '</span><div class="tu-bar-wrap"><div class="tu-bar" style="width:'
+    + Math.round(p.week_hours / max * 100) + '%;background:' + esc(p.accent_color) + ';"></div></div>'
+    + '<span class="tu-hours">' + p.week_hours + 'h</span></div>').join('');
 }
 
 async function loadGoals() {
@@ -2393,17 +2515,26 @@ async function loadTodos(list) {
       : '<span class="pri-rank">' + (idx + 1) + '</span>';
     const movers = t.done ? ''
       : '<span class="pri-move">'
-        + '<button class="dim" onclick="moveTodo(' + t.id + ',\'up\')">▲</button>'
-        + '<button class="dim" onclick="moveTodo(' + t.id + ',\'down\')">▼</button>'
+        + '<button class="dim" onclick="moveTodo(' + t.id + ',\'up\',\'' + list + '\')">▲</button>'
+        + '<button class="dim" onclick="moveTodo(' + t.id + ',\'down\',\'' + list + '\')">▼</button>'
         + '</span>';
+    const noteBtn = list === 'todo'
+      ? '<button class="dim" onclick="toggleNote(' + t.id + ')" title="Update note">📝</button>'
+      : '';
+    const noteRow = list === 'todo'
+      ? '<div class="todo-note-row" id="note-row-' + t.id + '" style="display:none;">'
+        + '<textarea class="form-input" id="note-text-' + t.id + '" rows="2" '
+        + 'placeholder="Update notes…" onblur="saveNote(' + t.id + ',\'' + list + '\')">'
+        + esc(t.note || '') + '</textarea></div>'
+      : '';
     return '<div class="todo-item">'
       + rank
       + '<input type="checkbox" class="todo-cb"' + (t.done ? ' checked' : '')
       + ' onchange="toggleTodoDone(' + t.id + ',\'' + list + '\',' + !t.done + ')">'
       + '<span class="todo-text' + (t.done ? ' done' : '') + '">' + esc(t.text) + '</span>'
-      + recur + due + movers
+      + recur + due + movers + noteBtn
       + '<button class="todo-del" onclick="deleteTodo(' + t.id + ',\'' + list + '\')">✕</button>'
-      + '</div>';
+      + '</div>' + noteRow;
   }
 
   document.getElementById(list + '-list').innerHTML =
@@ -2412,15 +2543,26 @@ async function loadTodos(list) {
   document.getElementById(list + '-done-count').textContent = done.length;
 }
 
-async function moveTodo(id, direction) {
+function toggleNote(id) {
+  const row = document.getElementById('note-row-' + id);
+  if (row) row.style.display = row.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveNote(id, list) {
+  const note = document.getElementById('note-text-' + id).value;
+  await api('/api/todos/' + id, { method: 'PATCH', body: { note: note } });
+}
+
+async function moveTodo(id, direction, list) {
   await api('/api/todos/' + id + '/move', { method: 'POST', body: { direction: direction } });
-  await loadTodos('vip');
+  await loadTodos(list || 'vip');
 }
 
 async function addTodo(list) {
   const text = document.getElementById(list + '-input').value.trim();
   if (!text) return;
-  const recur = document.getElementById(list + '-recur').value;
+  const recurEl = document.getElementById(list + '-recur');
+  const recur = recurEl ? recurEl.value : 'none';
   const body = { text: text, recur_type: recur };
   const due = document.getElementById(list + '-due').value;
   if (due) body.due_date = due;
@@ -2430,8 +2572,9 @@ async function addTodo(list) {
   await api('/api/todos/' + list, { method: 'POST', body: body });
   document.getElementById(list + '-input').value = '';
   document.getElementById(list + '-due').value = '';
-  document.getElementById(list + '-recur').value = 'none';
-  document.getElementById(list + '-recur-days').style.display = 'none';
+  if (recurEl) recurEl.value = 'none';
+  const recurDaysEl = document.getElementById(list + '-recur-days');
+  if (recurDaysEl) recurDaysEl.style.display = 'none';
   await loadTodos(list);
 }
 async function toggleTodoDone(id, list, done) {

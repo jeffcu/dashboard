@@ -133,6 +133,40 @@ def build_brief_data(db: Session) -> dict:
         "recur": t.recur_type if t.recur_type != "none" else None,
     } for i, t in enumerate(pri_items)]
 
+    # ── To-Dos (general list, separate from VIP) ─────────
+    todo_items = (db.query(Todo)
+                  .filter(Todo.list_id == "todo", Todo.active == True,  # noqa: E712
+                          Todo.done == False).all())  # noqa: E712
+    todo_items.sort(key=lambda t: t.sort_order)
+    todos = [{
+        "id": t.id, "text": t.text, "note": t.note or "", "rank": i + 1,
+        "due_date": t.due_date.isoformat() if t.due_date else None,
+        "overdue": bool(t.due_date and t.due_date < today),
+        "due_today": t.due_date == today,
+        "recur": t.recur_type if t.recur_type != "none" else None,
+    } for i, t in enumerate(todo_items)]
+
+    # ── latest diary notes across all projects ───────────
+    recent_diary_rows = (db.query(DiaryEntry).join(Project)
+                          .order_by(DiaryEntry.created_at.desc()).limit(6).all())
+    recent_diary = [{
+        "project_id": e.project_id, "project_name": e.project.name,
+        "text": e.text, "created_at": e.created_at.isoformat(),
+    } for e in recent_diary_rows]
+
+    # ── what's on the calendar — every dated commitment ──
+    calendar = []
+    for p_ in priorities:
+        if p_["due_date"]:
+            calendar.append({"kind": "priority", "text": p_["text"], "date": p_["due_date"]})
+    for t_ in todos:
+        if t_["due_date"]:
+            calendar.append({"kind": "todo", "text": t_["text"], "date": t_["due_date"]})
+    for f in friends:
+        if f.due_date and f.phase != "DONE":
+            calendar.append({"kind": "social", "text": f.name, "date": f.due_date.isoformat()})
+    calendar.sort(key=lambda x: x["date"])
+
     # ── the agenda: ordered, actionable, challenging ─────
     agenda = []
     for f in overdue:
@@ -170,8 +204,12 @@ def build_brief_data(db: Session) -> dict:
         "focus": focus,
         "agenda": agenda,
         "priorities": priorities,
+        "todos": todos,
+        "recent_diary": recent_diary,
+        "calendar": calendar[:8],
         "stale_projects": stale_projects,
         "research_projects": research_projects,
+        "research_threads_open": len(research_projects),
         "social": {
             "overdue": [social_step(f) for f in overdue],
             "due_this_week": [social_step(f) for f in due_week],

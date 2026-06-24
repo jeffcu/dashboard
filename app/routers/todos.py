@@ -15,7 +15,7 @@ from ..models import Todo
 
 router = APIRouter(prefix="/api", tags=["todos"])
 
-VALID_LISTS = ("vip", "house")
+VALID_LISTS = ("vip", "todo", "house")
 VALID_RECUR = ("none", "weekly", "monthly", "custom")
 
 
@@ -23,6 +23,7 @@ def todo_payload(t: Todo) -> dict:
     today = date.today()
     return {
         "id": t.id, "list_id": t.list_id, "text": t.text,
+        "note": t.note or "",
         "done": t.done,
         "done_at": t.done_at.isoformat() if t.done_at else None,
         "due_date": t.due_date.isoformat() if t.due_date else None,
@@ -70,6 +71,7 @@ class TodoCreate(BaseModel):
 
 class TodoPatch(BaseModel):
     text: str | None = None
+    note: str | None = None
     done: bool | None = None
     due_date: date | None = None
     recur_type: str | None = None
@@ -125,7 +127,7 @@ def patch_todo(todo_id: int, body: TodoPatch, db: Session = Depends(get_db)):
                            recur_type=t.recur_type, recur_days=t.recur_days,
                            sort_order=_next_sort_order(db, t.list_id))
             db.add(spawned)
-    for field in ("text", "due_date", "recur_type", "recur_days"):
+    for field in ("text", "note", "due_date", "recur_type", "recur_days"):
         v = getattr(body, field)
         if v is not None:
             setattr(t, field, v)

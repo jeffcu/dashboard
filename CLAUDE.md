@@ -59,7 +59,7 @@ A personal life-balance and social-maintenance system for Jeff Curie. It tracks 
   └── Telegram bot (long-polling — no webhook, no public URL)
 
 [macOS host]
-  └── xbar plugin (~/.config/xbar/plugins/dashboard.1m.sh)
+  └── xbar plugin (~/Library/Application Support/xbar/plugins/dashboard.1m.sh)
       polls localhost:8765/api/summary every 1 min
 
 [Telegram cloud]
@@ -168,6 +168,8 @@ PORT=8765
 | Domain reorder | Drag-and-drop in Project Tracker (2026-06-14) | Domain rows are draggable in the tracker; sort_order swapped via PATCH. Replaces earlier ▲▼ buttons decision. |
 | Daily Log architecture | Option C — ProjectLog only (2026-06-17) | Domain heatmap click-entry removed. Projects tracker is the sole time-entry UI. Domain totals are read-only rollups from ProjectLog. `#hm-wrap` and `#domain-panel` removed from HTML. |
 | Project Tracker redesign | Tight spreadsheet grid (2026-06-17) | `#pt-wrap` always visible (no `.open` class needed). Domain bars: thin dark strip with colored accent pip, ▶/▼ arrow, click to collapse/expand via `ptCollapsed` Set. Cells: 52×44px. Dead JS removed: `setTrackerView`, `toggleDomains`, `renderDomainPanel`, `ptOpenDomEdit/Close/Save`, `trackerView`. |
+| Project Tracker markup | CSS Grid (`#pt-grid`), not `<table>` (2026-06-17) | `<table>` couldn't keep day-column headers aligned with cells at wide viewports — `colspan` domain bars made column widths unstable. Replaced with `display:grid; grid-template-columns: minmax(160px,1fr) repeat(7,60px) 56px` on `#pt-grid`; project rows use `display:grid; grid-template-columns:subgrid` so all cells (header + every row) share one column definition. Guarantees alignment at any width — don't revert to `<table>` for this component. |
+| xbar plugin install path | `~/Library/Application Support/xbar/plugins/`, not `~/.config/xbar/plugins/` (2026-06-24) | Confirmed on Mac Mini with xbar 2.1.7-beta via Homebrew cask. The `.config` path from earlier docs is stale for current xbar versions — always verify via xbar's own "Open Plugin Folder" menu item if install seems to silently fail. |
 | Bot/scheduler startup | Inside FastAPI lifespan, token-optional | Single process, single container. Missing token → bot DORMANT, everything else runs. Token can be added any time via .env + restart. |
 | UI aesthetic | "Workshop" light theme (2026-06-12) — NOT LCARS | Jeff's call: no Star Trek. Warm paper #F7F2EA, ink #221C14, burnt orange #C44A18, deep teal #1E6E62, olive #5C7C2F for todos. System font stack, 14px body, high contrast. Heatmap ramps paper→deep orange; cell text white at ≥4h. CSS vars in `:root` of dashboard.html — restyle there, never in JS logic. |
 | App name | "The Board \| Forward Balanced" (2026-06-13) | Jeff's call. Title tag, wordmark, tagline updated. |
@@ -200,7 +202,7 @@ PORT=8765
 | Web UI v2 | app/static/dashboard.html | **Built — volume-mounted** | HTML/CSS/JS live on hard-refresh. Last major rewrite 2026-06-14. Full click-through needs browser verification. |
 | Telegram bot | app/telegram_bot.py | **Built — dormant** | Starts clean without token; live commands untested (no token yet) |
 | Scheduler | app/scheduler.py | **Built + tested** | Fires at BRIEFING_TIME in TZ; briefing text verified via /api/brief |
-| xbar plugin | xbar/dashboard.1m.sh | **Built + tested** | Live output + OFFLINE fallback both verified in sandbox |
+| xbar plugin | xbar/dashboard.1m.sh | **Built + installed on Mac Mini (2026-06-24)** | Live in menu bar. Install path is `~/Library/Application Support/xbar/plugins/`, not `~/.config/xbar/plugins/` — see Debugging History |
 | Docker | Dockerfile, docker-compose.yml | **Built** | Not yet run on host — needs `docker compose up --build` after 2026-06-14 backend changes |
 | briefing.py | app/briefing.py | **Built + updated** | ProjectLog rollup added; stale-project nag removed from agenda |
 | goals.py | app/routers/goals.py | **Built + updated** | ProjectLog rollup added; underperformers = domains only |
@@ -275,9 +277,17 @@ PORT=8765
 
 ### Known Issues / Needs Verification
 - Web UI v2 full click-through in a real browser (heatmap clicks, drag & drop, diary panel, domain editor modal, color picker)
-- Docker build not yet run on the Mac host after 2026-06-14 backend changes — `docker compose up -d --build` required
+- Docker build not yet run on the Mac host after 2026-06-14/2026-06-24 backend changes — `docker compose up -d --build` required
 - Telegram bot live commands + 7:30 briefing delivery untested — waiting on real token + user ID
 - **EXERCISE domain** in existing live DB: MTB is still a standalone domain. Needs SQL migration (see What's Next).
+- New TODAY cards (TIME INVESTMENT, TO-DOS, CALENDAR, RESEARCH race-to-zero, LATEST DIARY NOTES) and the To-Dos list on the Priorities tab verified via curl against `/api/today` + `/api/todos/todo` in sandbox only — needs a real-browser click-through.
+
+### 2026-06-24 Changes (session 7)
+- **Fixed bug:** `switchTab('todos')` never called `loadTodos('vip')` — the VIP Priorities list rendered the panel shell but never populated rows. One-line fix in `switchTab()`.
+- **New general To-Dos list**: `Todo.list_id` now also accepts `'todo'` (was `vip`/`house` only). Separate section on the Priorities tab, under VIP Priorities. Each item: optional due date, ▲▼ manual reorder (same mechanism as VIP), and a 📝 toggle that reveals a per-item note textarea for running updates (`Todo.note` column, new — migrated via `_migrate()` in `main.py`).
+- **`moveTodo`/`addTodo` made list-generic**: `moveTodo(id, direction, list)` now reloads whichever list the moved item belongs to (was hardcoded to reload `'vip'` — would have silently broken the new To-Dos list's reorder). `addTodo()` no longer assumes a recur `<select>` exists (the To-Dos list has no recurrence UI).
+- **TODAY page redesign** — `build_brief_data()` in `briefing.py` now also returns `todos` (general to-do list), `recent_diary` (latest 6 diary entries across all projects), `calendar` (next 8 dated commitments merged from priorities/todos/social due dates, sorted), and `research_threads_open` (count). New TODAY cards: TIME INVESTMENT THIS WEEK (relative horizontal bar chart per project, scaled to the busiest project this week via `/api/project-log/week`, not to an absolute hour budget), TO-DOS, ON THE CALENDAR, RESEARCH THREADS — RACE TO ZERO (big counter, turns green at 0), LATEST DIARY NOTES (full-width).
+- **New constraint:** `Todo.note` is free text per item, not tied to recurrence or done-state — it persists across done/undone toggles, intended as a running log of updates on that to-do.
 
 ### 2026-06-14 Changes (session 6)
 - **ProjectLog rollup**: `briefing.py` now adds `project_log` hours into domain `week` + `recent` totals (dormant/behind detection now counts project-logged hours toward the domain). Same rollup added to `goals.py`.
@@ -331,7 +341,7 @@ PORT=8765
 
 ## What's Next
 
-0. Jeff, on the Mac: `git add -A && git commit -m "The Board: drag+drop, color picker, sticky diary, domain-grouped diaries, ProjectLog rollup"` (ALL git ops on host — never from sandbox)
+0. Jeff, on the Mac: `git add -A && git commit -m "..."` for the 2026-06-24 changes below (ALL git ops on host — never from sandbox), then `docker compose up -d --build` (backend changed: models.py, main.py migration, routers/todos.py, briefing.py).
 1. **Live DB migration for EXERCISE domain** (existing installs only):
    ```sql
    INSERT OR IGNORE INTO domains (key,label,weekly_goal,sort_order,active) VALUES ('EXERCISE','Exercise',0,4,1);
@@ -341,7 +351,13 @@ PORT=8765
 3. Hard-refresh browser (Cmd+Shift+R) — HTML is volume-mounted so no rebuild needed for UI
 4. Verify in browser: PROJECTS tracker view (drag domains/projects), Diaries domain sections (drag project cards between domains), diary panel sticky, color picker in ⚙ SETTINGS, TODAY goals panel shows domains only
 5. Jeff provides real TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USER_ID → restart container → test `/log coding 2` and `/brief`
-6. Install xbar plugin: `cp xbar/dashboard.1m.sh ~/.config/xbar/plugins/ && chmod +x ~/.config/xbar/plugins/dashboard.1m.sh`
+6. Install xbar plugin (confirmed path on Mac Mini, 2026-06-24 — newer xbar versions use Application Support, not `.config`):
+   ```bash
+   mkdir -p ~/Library/Application\ Support/xbar/plugins
+   cp xbar/dashboard.1m.sh ~/Library/Application\ Support/xbar/plugins/
+   chmod +x ~/Library/Application\ Support/xbar/plugins/dashboard.1m.sh
+   ```
+   Then click the xbar menu bar icon → Refresh All Plugins.
 7. Confirm 7:30am briefing arrives next morning
 
 ---
@@ -379,10 +395,30 @@ PORT=8765
 | 2026-06-14 | EXERCISE domain showed "dormant 3+ weeks" on TODAY despite having ProjectLog hours | briefing.py only read DailyLog for week/recent domain totals; ProjectLog hours were ignored | Added ProjectLog rollup loop after DailyLog loop in both `briefing.py` and `goals.py` |
 | 2026-06-14 | `apBadge` referenced in `projCard()` return string after being removed from function body | JS parse error / undefined variable | Removed stale `+ apBadge` at end of return string. Always grep for removed variables before declaring a refactor done. |
 | 2026-06-14 | `closeProjEditPanel()` called in `saveProjEdit()` after function was renamed | ReferenceError at runtime | Replaced with direct DOM: `document.getElementById('diary-mgmt').classList.remove('open')` |
+| 2026-06-17 | Project Tracker day-column headers (MON–SUN) drifted out of alignment with the day cells below at wide browser widths | Misaligned columns at wide viewport, correct only when narrow | `<table>` used `width:100%` with no `table-layout:fixed`; domain-bar rows used `colspan` which made column widths unstable as extra space got redistributed. Fix: rebuilt as CSS Grid (`#pt-grid`) with one shared `grid-template-columns: minmax(160px,1fr) repeat(7,60px) 56px` — header cells and project-row cells (via `display:grid;grid-template-columns:subgrid` on `.pt-row`) are now siblings in the same grid, so alignment can't drift at any width. |
+| 2026-06-24 | xbar plugin install on Mac Mini following CLAUDE.md instructions (`~/.config/xbar/plugins/`) | `cp`/`chmod` failed: "No such file or directory"; after creating the folder manually, xbar still showed nothing in the menu bar | This xbar version (2.1.7-beta, installed via `brew install --cask xbar`) watches `~/Library/Application Support/xbar/plugins/`, not `~/.config/xbar/plugins/`. Confirmed via xbar's own "Open Plugin Folder" menu item. **Updated install path everywhere in this doc.** If a future xbar version changes this again, check the app's own menu rather than trusting this doc blindly. |
 
 ---
 
 ## Session Log
+
+### 2026-06-24 (tracker grid fix + GitHub Pages + xbar install on Mac Mini)
+**Phase:** Polish + deployment — fix a layout bug, ship a public landing page, finish the xbar menu bar install  
+**Attempted:** (1) Fix Project Tracker day-column headers drifting out of alignment with cells at wide browser widths. (2) Publish the existing `docs/index.html` GitHub Pages landing page. (3) Walk through installing the xbar plugin on the Mac Mini from scratch.  
+**Succeeded:** (1) First attempt (`table-layout:fixed` + `<colgroup>`) didn't fully fix it because `colspan` domain-bar rows still destabilized column widths — rebuilt the whole tracker as CSS Grid (`#pt-grid`, `minmax(160px,1fr) repeat(7,60px) 56px`) with project rows as `display:grid;grid-template-columns:subgrid` children. Header and cells now share one column definition; alignment can't drift. (2) Enabled GitHub Pages via `gh api repos/jeffcu/dashboard/pages` (UI button wasn't visible to Jeff) — site live at https://jeffcu.github.io/dashboard/. (3) Found that `brew install --cask xbar` (2.1.7-beta) watches `~/Library/Application Support/xbar/plugins/`, not the `~/.config/xbar/plugins/` path this doc previously specified — corrected everywhere, plugin now confirmed live in the Mac Mini menu bar.  
+**Failed:** Nothing.  
+**New constraints discovered:** xbar's actual plugin folder should be confirmed via the app's own "Open Plugin Folder" menu item rather than assumed from docs, since it's changed across versions.  
+**Plan changes:** Locked Decisions updated (Project Tracker markup → CSS Grid; xbar plugin install path). Debugging History has two new rows (tracker alignment, xbar path).  
+**Awaiting user:** None — both the tracker fix and xbar are confirmed working; GitHub Pages site is live.
+
+### 2026-06-24 (priorities bugfix + general to-dos + TODAY redesign)
+**Phase:** Bugfix + feature evolution — fix VIP Priorities not rendering, add a second To-Dos list, redesign TODAY into a richer launchpad  
+**Attempted:** (1) Diagnose why VIP Priorities never showed on the Priorities tab despite working on TODAY. (2) Add a separate general To-Dos list (due date, manual reorder, per-item update notes) under VIP Priorities. (3) Redesign TODAY: relative time-investment chart by project, latest diary notes, calendar feed, To-Dos card, research-threads race-to-zero counter.  
+**Succeeded:** Root cause found — `switchTab('todos')` never called `loadTodos('vip')`, fixed with one line. Added `Todo.note` column + migration, `'todo'` list_id, note-toggle UI. Fixed a latent bug where `moveTodo` always reloaded the `'vip'` list regardless of which list the moved item belonged to (would have broken To-Dos reordering). `briefing.py` now returns `todos`, `recent_diary`, `calendar`, `research_threads_open`. New TODAY cards built and wired to `loadToday()`/`loadTimeUse()`. Verified all new/changed endpoints via live uvicorn + curl in sandbox (todo creation, note patch, `/api/today` shape, `/api/project-log/week`).  
+**Failed:** Nothing — user explicitly deferred the earlier "agenda relative scale" request mid-session ("Forget it") in favor of this scope; not implemented.  
+**New constraints discovered:** `Todo.note` persists independent of done-state — it's a running update log, not cleared on completion or recurrence spawn.  
+**Plan changes:** None to Locked Decisions; this is additive.  
+**Awaiting user:** Real-browser click-through of the new TODAY cards and the To-Dos section (only curl-verified so far), `docker compose up -d --build` (backend changed), git commit on Mac.
 
 ### 2026-06-14 (drag/drop + color picker + diary UX + domain grouping)
 **Phase:** Feature evolution — 8 UX improvements + ProjectLog rollup fixes  

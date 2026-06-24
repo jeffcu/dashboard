@@ -99,6 +99,14 @@ def _migrate() -> None:
         conn.execute(text("UPDATE domains SET key='VIP', label='VIP' WHERE key='LORI'"))
         conn.commit()
 
+        # todos — note field (free-form update log per item)
+        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(todos)"))]
+        if cols and "note" not in cols:
+            conn.execute(text("ALTER TABLE todos ADD COLUMN note TEXT DEFAULT ''"))
+            conn.execute(text("UPDATE todos SET note = '' WHERE note IS NULL"))
+            conn.commit()
+            logger.info("Migrated: todos.note added")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -105,8 +105,9 @@ class ProjectLog(Base):
 class Todo(Base):
     __tablename__ = "todos"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    list_id: Mapped[str] = mapped_column(String, nullable=False)  # 'vip' / 'house'
+    list_id: Mapped[str] = mapped_column(String, nullable=False)  # 'vip' / 'todo' / 'house'
     text: Mapped[str] = mapped_column(Text, nullable=False)
+    note: Mapped[str] = mapped_column(Text, default="")
     done: Mapped[bool] = mapped_column(Boolean, default=False)
     done_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
